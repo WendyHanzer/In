@@ -1,11 +1,15 @@
 #include <GL/glew.h> // glew must be included before the main gl libs
 #include <GL/glut.h> // doing otherwise causes compiler shouting
 #include <iostream>
+#include <fstream>
 #include <chrono>
+#include <string>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp> //Makes passing matrices to shaders easier
+
+using std::string;
 
 
 //--Data types
@@ -40,6 +44,8 @@ void render();
 void update();
 void reshape(int n_w, int n_h);
 void keyboard(unsigned char key, int x_pos, int y_pos);
+string vsFile = "vs.txt";
+string fsFile = "fs.txt";
 
 //--Resource management
 bool initialize();
@@ -171,6 +177,22 @@ void keyboard(unsigned char key, int x_pos, int y_pos)
     }
 }
 
+char* shaderLoader(string filename){
+	std::ifstream is;
+	is.open(filename, std::ios::binary);
+	int length = 0;
+
+	is.seekg(0, std::ios::end);
+	length = is.tellg();
+	is.seekg(0, std::ios::beg);
+	char *ret = new char[length];
+	is.read(ret, length);
+
+	is.close();
+	return ret;
+
+}
+
 bool initialize()
 {
     // Initialize basic geometry and shaders for this example
@@ -238,21 +260,8 @@ bool initialize()
     //Shader Sources
     // Put these into files and write a loader in the future
     // Note the added uniform!
-    const char *vs =
-        "attribute vec3 v_position;"
-        "attribute vec3 v_color;"
-        "varying vec3 color;"
-        "uniform mat4 mvpMatrix;"
-        "void main(void){"
-        "   gl_Position = mvpMatrix * vec4(v_position, 1.0);"
-        "   color = v_color;"
-        "}";
-
-    const char *fs =
-        "varying vec3 color;"
-        "void main(void){"
-        "   gl_FragColor = vec4(color.rgb, 1.0);"
-        "}";
+	const char *vs = shaderLoader(vsFile);
+	const char *fs = shaderLoader(fsFile);
 
     //compile the shaders
     GLint shader_status;
