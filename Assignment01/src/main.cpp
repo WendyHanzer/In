@@ -177,20 +177,62 @@ void keyboard(unsigned char key, int x_pos, int y_pos)
     }
 }
 
-char* shaderLoader(string filename){
-	std::ifstream is;
-	is.open(filename, std::ios::binary);
+bool shaderLoader(string fvs, string ffs){
+    GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+    GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+	std::ifstream is1;
+	std::ifstream is2;
 	int length = 0;
 
-	is.seekg(0, std::ios::end);
-	length = is.tellg();
-	is.seekg(0, std::ios::beg);
+	is1.open(fvs, std::ios::binary);
+	is1.seekg(0, std::ios::end);
+	length = is1.tellg();
+	is1.seekg(0, std::ios::beg);
 	char *ret = new char[length];
-	is.read(ret, length);
+	is1.read(ret, length);
+	is1.close();
+	const char *vs = ret;
 
-	is.close();
-	return ret;
+	is2.open(ffs, std::ios::binary);
+	is2.seekg(0, std::ios::end);
+	length = is2.tellg();
+	is2.seekg(0, std::ios::beg);
+	char *ret2 = new char[length];
+	is2.read(ret2, length);
+	is2.close();
+	const char *fs = ret2;
 
+    GLint shader_status;
+
+    glShaderSource(vertex_shader, 1, &vs, NULL);
+    glCompileShader(vertex_shader);
+    glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &shader_status);
+    if(!shader_status) {
+        std::cerr << "[F] FAILED TO COMPILE VERTEX SHADER!" << std::endl;
+        return false;
+    }
+
+    glShaderSource(fragment_shader, 1, &fs, NULL);
+    glCompileShader(fragment_shader);
+    glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &shader_status);
+    if(!shader_status) {
+        std::cerr << "[F] FAILED TO COMPILE FRAGMENT SHADER!" << std::endl;
+        return false;
+    }
+
+    program = glCreateProgram();
+    glAttachShader(program, vertex_shader);
+    glAttachShader(program, fragment_shader);
+    glLinkProgram(program);
+    glGetProgramiv(program, GL_LINK_STATUS, &shader_status);
+    if(!shader_status) {
+        std::cerr << "[F] THE SHADER PROGRAM FAILED TO LINK" << std::endl;
+        return false;
+    }
+
+	delete ret;
+	delete ret2;
+	return true;
 }
 
 bool initialize()
@@ -254,53 +296,10 @@ bool initialize()
 
     //--Geometry done
 
-    GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-
-    //Shader Sources
-    // Put these into files and write a loader in the future
-    // Note the added uniform!
-	const char *vs = shaderLoader(vsFile);
-	const char *fs = shaderLoader(fsFile);
-
-    //compile the shaders
-    GLint shader_status;
-
-    // Vertex shader first
-    glShaderSource(vertex_shader, 1, &vs, NULL);
-    glCompileShader(vertex_shader);
-    //check the compile status
-    glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &shader_status);
-    if(!shader_status)
-    {
-        std::cerr << "[F] FAILED TO COMPILE VERTEX SHADER!" << std::endl;
-        return false;
-    }
-
-    // Now the Fragment shader
-    glShaderSource(fragment_shader, 1, &fs, NULL);
-    glCompileShader(fragment_shader);
-    //check the compile status
-    glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &shader_status);
-    if(!shader_status)
-    {
-        std::cerr << "[F] FAILED TO COMPILE FRAGMENT SHADER!" << std::endl;
-        return false;
-    }
-
-    //Now we link the 2 shader objects into a program
-    //This program is what is run on the GPU
-    program = glCreateProgram();
-    glAttachShader(program, vertex_shader);
-    glAttachShader(program, fragment_shader);
-    glLinkProgram(program);
-    //check if everything linked ok
-    glGetProgramiv(program, GL_LINK_STATUS, &shader_status);
-    if(!shader_status)
-    {
-        std::cerr << "[F] THE SHADER PROGRAM FAILED TO LINK" << std::endl;
-        return false;
-    }
+	//--Load shaders
+	if(!shaderLoader(vsFile, fsFile)) {
+		return false;
+	}
 
     //Now we set the locations of the attributes and uniforms
     //this allows us to access them easily while rendering
