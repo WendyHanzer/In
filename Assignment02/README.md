@@ -1,26 +1,6 @@
-A simple example of matrix use in OpenGL
-========================================
+The program spins, stops and has menus with keyboard and mouse support.
 
-Building This Example
----------------------
+Right click and click toggle rotate to turn the rotation on or off. LMB and 'a' spins the cube backwards.
 
-*This example requires GLM*
-*On ubuntu it can be installed with this command*
-
->$ sudo apt-get install libglm-dev
-
-To build this example just 
-
->$ cd build
->$ make
-
-The excutable will be put in bin
-
-Mac OS X Things
----------------
-
-*Mac OS X requires some changing of the headers*
-
-*Also std::chrono may or may not work on OS X*
-
-*Should that be the case use gettimeofday*
+No issues pretty straight-forward. I tried to make it stop spinning in teh same spot. I think it works but it appears wrong sometimes, I 
+assumed it was just the buffer being weird sometimes. When you change the direction it always reverses from the correct position.
