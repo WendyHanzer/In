@@ -188,8 +188,9 @@ bool shaderLoader(string fvs, string ffs){
 	is1.seekg(0, std::ios::end);
 	length = is1.tellg();
 	is1.seekg(0, std::ios::beg);
-	char *ret = new char[length];
+	char *ret = new char[length+1];
 	is1.read(ret, length);
+	ret[length+1] = '\0';
 	is1.close();
 	const char *vs = ret;
 
@@ -197,8 +198,9 @@ bool shaderLoader(string fvs, string ffs){
 	is2.seekg(0, std::ios::end);
 	length = is2.tellg();
 	is2.seekg(0, std::ios::beg);
-	char *ret2 = new char[length];
+	char *ret2 = new char[length+1];
 	is2.read(ret2, length);
+	ret2[length+1] = '\0';
 	is2.close();
 	const char *fs = ret2;
 
