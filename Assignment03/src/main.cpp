@@ -38,6 +38,7 @@ glm::mat4 mvp2;
 void render();
 void update();
 void reshape(int, int);
+void specKeyboard(int, int, int);
 void keyboard(unsigned char, int, int);
 void menu(int);
 void mouseClicks(int, int, int, int);
@@ -70,6 +71,7 @@ int main(int argc, char **argv) {
     glutReshapeFunc(reshape);
     glutIdleFunc(update);
     glutKeyboardFunc(keyboard);
+	glutSpecialFunc(specKeyboard);
 
     bool init = initialize();
 
@@ -158,18 +160,22 @@ void update() {
 	static float angle2 = 0.0;
     float dt = getDT();
 
-    angle += dt * M_PI/2;
+
 	angle2 += (dt * M_PI/2) + (dt * M_PI/2);
 
 	// check which direction to orbit
-	if(clockdir) {
-    	model = glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * -sin(angle), 0.0, 4.0 * cos(angle)));
-    	model2 = glm::translate( model, glm::vec3(4.0 * sin(angle2), 0.0, 4.0 * cos(angle2)));
+	if(clockdir) { 
+   		angle -= dt * M_PI/2;
+    	model = glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * sin(angle), 0.0, 4.0 * cos(angle)));
+    	model2 = glm::translate( model, glm::vec3(4.0 * sin(angle2), 0.0, 4.0 * cos(angle2))) ;
 		model = glm::rotate( model, lastRotate, glm::vec3(0.0f, 1.0f, 0.0f));
+		std::cout<< "clock" << (4.0 * sin(angle)) << std::endl;
 	} else {
-    	model = glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * -sin(angle), 0.0, 4.0 * cos(angle)));
+   		angle += dt * M_PI/2;
+    	model = glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * sin(angle), 0.0, 4.0 * cos(angle)));
     	model2 = glm::translate( model, glm::vec3(4.0 * sin(angle2), 0.0, 4.0 * cos(angle2)));
 		model = glm::rotate( model, lastRotate, glm::vec3(0.0f, 1.0f, 0.0f));
+		std::cout<< "!clock" << (4.0 * sin(angle)) << std::endl;
 	}
 
 	// check for rotate flag
@@ -196,10 +202,25 @@ void reshape(int n_w, int n_h) {
 
 void keyboard(unsigned char key, int x_pos, int y_pos) {
 	// if esc then exit else if a then rotate backwards
-    if(key == 27) {
-        exit(0);
-    } else if(key == 'a') {
-		back = !back;
+	switch(key) {
+		case 27:
+			exit(0);
+			break;
+		case 'a':
+			back = !back;
+			break;
+	}
+}
+
+// to detect arrow keys
+void specKeyboard(int key, int x, int y) {
+	switch(key) {
+		case GLUT_KEY_LEFT:
+			clockdir = false;
+			break;
+		case GLUT_KEY_RIGHT:
+			clockdir = true;
+			break;
 	}
 }
 
