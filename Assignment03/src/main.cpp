@@ -169,13 +169,11 @@ void update() {
     	model = glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * sin(angle), 0.0, 4.0 * cos(angle)));
     	model2 = glm::translate( model, glm::vec3(4.0 * sin(angle2), 0.0, 4.0 * cos(angle2))) ;
 		model = glm::rotate( model, lastRotate, glm::vec3(0.0f, 1.0f, 0.0f));
-		std::cout<< "clock" << (4.0 * sin(angle)) << std::endl;
 	} else {
    		angle += dt * M_PI/2;
     	model = glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * sin(angle), 0.0, 4.0 * cos(angle)));
     	model2 = glm::translate( model, glm::vec3(4.0 * sin(angle2), 0.0, 4.0 * cos(angle2)));
 		model = glm::rotate( model, lastRotate, glm::vec3(0.0f, 1.0f, 0.0f));
-		std::cout<< "!clock" << (4.0 * sin(angle)) << std::endl;
 	}
 
 	// check for rotate flag
@@ -236,8 +234,9 @@ bool shaderLoader(string fvs, string ffs){
 	is1.seekg(0, std::ios::end);
 	length = is1.tellg();
 	is1.seekg(0, std::ios::beg);
-	char *ret = new char[length];
+	char *ret = new char[length + 1];
 	is1.read(ret, length);
+	ret[length+1] = '\0';
 	is1.close();
 	const char *vs = ret;
 
@@ -245,8 +244,9 @@ bool shaderLoader(string fvs, string ffs){
 	is2.seekg(0, std::ios::end);
 	length = is2.tellg();
 	is2.seekg(0, std::ios::beg);
-	char *ret2 = new char[length];
+	char *ret2 = new char[length+1];
 	is2.read(ret2, length);
+	ret2[length+1] = '\0';
 	is2.close();
 	const char *fs = ret2;
 
