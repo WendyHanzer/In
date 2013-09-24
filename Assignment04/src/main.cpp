@@ -24,6 +24,7 @@ bool clockdir = true;
 float lastRotate = 0.0f;
 string vsFile = "vs.txt";
 string fsFile = "fs.txt";
+string objectFile;
 GLuint program;
 GLuint vbo_geometry;
 GLuint vbo_geometry2;
@@ -46,10 +47,13 @@ void mouseClicks(int, int, int, int);
 bool initialize();
 void cleanUp();
 float getDT();
-void modelLoader(string, Vertex&);
+std::vector<Vertex> modelLoader(string);
 std::chrono::time_point<std::chrono::high_resolution_clock> t1,t2;
 
 int main(int argc, char **argv) {
+	std::cout << argv[1];
+	objectFile = argv[1];
+
 	// Initialize things
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH);
@@ -238,7 +242,7 @@ bool shaderLoader(string fvs, string ffs){
 	is1.seekg(0, std::ios::beg);
 	char *ret = new char[length + 1];
 	is1.read(ret, length);
-	ret[length+1] = '\0';
+	ret[length] = '\0';
 	is1.close();
 	const char *vs = ret;
 
@@ -248,7 +252,7 @@ bool shaderLoader(string fvs, string ffs){
 	is2.seekg(0, std::ios::beg);
 	char *ret2 = new char[length+1];
 	is2.read(ret2, length);
-	ret2[length+1] = '\0';
+	ret2[length] = '\0';
 	is2.close();
 	const char *fs = ret2;
 
@@ -290,63 +294,19 @@ bool shaderLoader(string fvs, string ffs){
 
 // more magic
 bool initialize() {
-	//Vertex geometry;
-	//geometry = modelLoader("untitled.obj");
-	
-	Vertex geometry[12];
-	
-	modelLoader("untitled.obj", geometry);
+	std::vector<Vertex> geoTemp;
+	geoTemp = modelLoader(objectFile);
+	int x = geoTemp.size();
+	Vertex geometry[x];
+	for(int i=0; i<x; i++) {
+		geometry[i].position[0] = geoTemp[i].position[0];
+		geometry[i].position[1] = geoTemp[i].position[1];
+		geometry[i].position[2] = geoTemp[i].position[2];
+		geometry[i].color[0] = 1.0f;
+		geometry[i].color[1] = 1.0f;
+		geometry[i].color[2] = 1.0f;
+	}
 
-	/*
-    Vertex geometry[] = { {{-1.0, -1.0, -1.0}, {0.0, 0.0, 0.0}},
-                          {{-1.0, -1.0, 1.0}, {0.0, 0.0, 1.0}},
-                          {{-1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}},
-
-                          {{1.0, 1.0, -1.0}, {1.0, 1.0, 0.0}},
-                          {{-1.0, -1.0, -1.0}, {0.0, 0.0, 0.0}},
-                          {{-1.0, 1.0, -1.0}, {0.0, 1.0, 0.0}},
-                          
-                          {{1.0, -1.0, 1.0}, {1.0, 0.0, 1.0}},
-                          {{-1.0, -1.0, -1.0}, {0.0, 0.0, 0.0}},
-                          {{1.0, -1.0, -1.0}, {1.0, 0.0, 0.0}},
-                          
-                          {{1.0, 1.0, -1.0}, {1.0, 1.0, 0.0}},
-                          {{1.0, -1.0, -1.0}, {1.0, 0.0, 0.0}},
-                          {{-1.0, -1.0, -1.0}, {0.0, 0.0, 0.0}},
-
-                          {{-1.0, -1.0, -1.0}, {0.0, 0.0, 0.0}},
-                          {{-1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}},
-                          {{-1.0, 1.0, -1.0}, {0.0, 1.0, 0.0}},
-
-                          {{1.0, -1.0, 1.0}, {1.0, 0.0, 1.0}},
-                          {{-1.0, -1.0, 1.0}, {0.0, 0.0, 1.0}},
-                          {{-1.0, -1.0, -1.0}, {0.0, 0.0, 0.0}},
-
-                          {{-1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}},
-                          {{-1.0, -1.0, 1.0}, {0.0, 0.0, 1.0}},
-                          {{1.0, -1.0, 1.0}, {1.0, 0.0, 1.0}},
-                          
-                          {{1.0, 1.0, 1.0}, {1.0, 1.0, 1.0}},
-                          {{1.0, -1.0, -1.0}, {1.0, 0.0, 0.0}},
-                          {{1.0, 1.0, -1.0}, {1.0, 1.0, 0.0}},
-
-                          {{1.0, -1.0, -1.0}, {1.0, 0.0, 0.0}},
-                          {{1.0, 1.0, 1.0}, {1.0, 1.0, 1.0}},
-                          {{1.0, -1.0, 1.0}, {1.0, 0.0, 1.0}},
-
-                          {{1.0, 1.0, 1.0}, {1.0, 1.0, 1.0}},
-                          {{1.0, 1.0, -1.0}, {1.0, 1.0, 0.0}},
-                          {{-1.0, 1.0, -1.0}, {0.0, 1.0, 0.0}},
-
-                          {{1.0, 1.0, 1.0}, {1.0, 1.0, 1.0}},
-                          {{-1.0, 1.0, -1.0}, {0.0, 1.0, 0.0}},
-                          {{-1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}},
-
-                          {{1.0, 1.0, 1.0}, {1.0, 1.0, 1.0}},
-                          {{-1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}},
-                          {{1.0, -1.0, 1.0}, {1.0, 0.0, 1.0}}
-                        };
-*/
     glGenBuffers(1, &vbo_geometry);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_geometry);
     glBufferData(GL_ARRAY_BUFFER, sizeof(geometry), geometry, GL_STATIC_DRAW);
@@ -402,15 +362,15 @@ float getDT() {
     return ret;
 }
 
-void modelLoader(string fName, Vertex &ret) {
+std::vector<Vertex> modelLoader(string fName) {
 	std::fstream fin;
 	string line;
 	float value;
 	Vertex vecTemp;
-	Vertex fTemp;
+	std::vector<Vertex> retVertex;
 	std::vector<Vertex> vertex1;
-	std::vector<Vertex> vertex2;
-	
+	std::vector<int> point;
+	int mysize;
 	fin.open(fName);
 	
 	while(!fin.eof()) {
@@ -418,43 +378,38 @@ void modelLoader(string fName, Vertex &ret) {
 		if(line =="#") {
 			fin.ignore(128, '\n');
 			fin.ignore(128, '\n');
-		} else if(line == "o") {
+		} 
+		else if(line == "o") {
 			fin >> line;
 			std::cout << "This is a " << line << std::endl;
-		} else if( line == "v" ) {
+		} 
+		else if( line == "v" ) {
 			for(int i = 0; i < 3; i++) {
 				fin >> value;
 				vecTemp.position[i] = value;
 			}
 			vertex1.push_back(vecTemp);
-		} else if(line == "s") {
-		} else if(line == "f") {
-			for(int i = 0; i < 3; i++) {
+		} 
+		else if(line == "s") {} 
+		else if(line == "f") {
+			for(int i=0; i<3; i++) {
 				fin >> value;
-				fTemp.position[i] = value;
+				point.push_back(value);
 			}
-			vertex2.push_back(fTemp);
 		}
+
 	}
-	for(int i = 0; i < 8; i++) {
-		std::cout << vertex1[i].position[0] << ", " << vertex1[i].position[1] << ", " << vertex1[i].position[2] << ", " << std::endl;
+	fin.close();	
+	mysize = point.size();
+	Vertex ret[mysize-3];
+	for(int i = 0; i<mysize-3; i++) {
+		ret[i].position[0] = vertex1[point[i] -1].position[0];
+		ret[i].position[1] = vertex1[point[i] -1].position[1];
+		ret[i].position[2] = vertex1[point[i] -1].position[2];
+		retVertex.push_back(ret[i]);
 	}
 
-	std::cout << std::endl;
-
-	for(int i = 0; i < 12; i++) {
-		std::cout << vertex2[i].position[0] << ", " << vertex2[i].position[1] << ", " << vertex2[i].position[2] << ", " << std::endl;
-	}
-	fin.close();
-	
-	//Vertex geo[vertex2.size()];
-	
-	for(int i=0; i<vertex2.size(); i++) {
-		ret[i].position[0] = vertex1[vertex2[i].position[0]].position[0];
-		ret[i].position[1] = vertex1[vertex2[i].position[1]].position[1];
-		ret[i].position[2] = vertex1[vertex2[i].position[2]].position[2];
-	}
-	
+	return retVertex;
 }
 
 
