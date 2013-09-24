@@ -51,7 +51,6 @@ std::vector<Vertex> modelLoader(string);
 std::chrono::time_point<std::chrono::high_resolution_clock> t1,t2;
 
 int main(int argc, char **argv) {
-	std::cout << argv[1];
 	objectFile = argv[1];
 
 	// Initialize things
@@ -366,15 +365,16 @@ std::vector<Vertex> modelLoader(string fName) {
 	std::fstream fin;
 	string line;
 	float value[2];
+	int temp[4];
 	Vertex vecTemp;
 	std::vector<Vertex> retVertex;
 	std::vector<Vertex> vertex1;
 	std::vector<int> point;
-	int mysize;
-	int x;
+	int x, z;
 	bool triangle = true;
 	fin.open(fName);
 	char garbage;
+	string gar;
 	
 	while(!fin.eof()) {
 		fin >> line;
@@ -392,105 +392,153 @@ std::vector<Vertex> modelLoader(string fName) {
 			vertex1.push_back(vecTemp);
 		} 
 		else if(line == "f") {
+			while(!fin.eof()) {
+				fin >> z;
+				temp[0] = z;
+				fin.get(garbage);
+				if(garbage == ' ') {
+					fin >> z;
+					temp[1] = z;
+					fin >> z;
+					temp[2] = z;
+					fin >> garbage;
+					if(garbage != 'f') {
+						triangle = false;
+						z = garbage - '0';
+						temp[3] = z;
+						fin >> garbage;
+					}
+				}
+				else {
+					fin >> gar;
+					fin >> z;
+					temp[1] = z;
+					fin >> gar;
+					fin >> z;
+					temp[2] = z;
+					fin >> gar;
+					fin >> garbage;
+					if(garbage != 'f') {
+						triangle = false;
+						z = garbage - '0';
+						temp[3] = z;
+						fin >> gar;
+						fin >> garbage;
+					}
+				}
+				for(int i=0; i<3; i++) 
+					retVertex.push_back(vertex1[temp[i]-1]);
+
+				if(!triangle) {
+					retVertex.push_back(vertex1[temp[0]-1]);
+					retVertex.push_back(vertex1[temp[2]-1]);
+					retVertex.push_back(vertex1[temp[3]-1]);
+				}
+				std::cout << temp[0] << " " << temp[1] << " " << temp[2] << " " << temp[3] << std::endl;
+				//std::cin >> z;
+			}
+				/*
+				while(garbage != ' ')
+					fin.get(garbage);
+				fin >> z;
+				temp[1] = z;
+				fin.get(garbage);
+				while(garbage != ' ')
+					fin.get(garbage);
+				fin >> z;
+				temp[2] = z;
+				fin.get(garbage);
+				while(garbage != ' ') {
+					fin.get(garbage);
+					if(garbage == '\n') {
+						triangle = true;
+					}
+					std::cout << garbage << " ";
+				}
+
+				std::cout << temp[0] << " " << temp[1] << " " << temp[2] << " " << temp[3] << std::endl;
+				
+				for(int i=0; i<3; i++) {
+					retVertex.push_back(vertex1[temp[i]-1]);
+				}
+
+				//if(!triangle) {
+			//		retVertex.push_back(vertex1[temp[0]-1]);
+			//		retVertex.push_back(vertex1[temp[2]-1]);
+			//		retVertex.push_back(vertex1[temp[3]-1]);
+			//	}
+			}
+					
+		/*
 				while(!fin.eof()) {
-				fin.get(garbage);
-				if(garbage == ' ') 
 					fin.get(garbage);
-				x = garbage -'0';
-				point.push_back(x);
-					std::cout << x << " ";
-				fin.get(garbage);
-				if(garbage != ' ') {
-					while(garbage != ' ')
-						fin.get(garbage);
-					fin.get(garbage);
-					x = garbage - '0';
-					point.push_back(x);
+					if(garbage == ' ') 
+						fin >> z;
+					//x = garbage -'0';
+					temp[0] = z;
 					fin.get(garbage);
 					if(garbage != ' ') {
 						while(garbage != ' ')
 							fin.get(garbage);
+						fin >> z;
+						//x = garbage - '0';
+						temp[1] = z;
 						fin.get(garbage);
+						if(garbage != ' ') {
+							while(garbage != ' ')
+								fin.get(garbage);
+							fin >> z;
+							//x = garbage - '0';
+							temp[2] = z;
+							fin.get(garbage);
+							if(garbage != ' ') {
+								triangle = false;
+								while(garbage != ' ')
+									fin.get(garbage);
+								fin >> z;
+								//x = garbage -'0';
+								temp[3] = z;
+							}
+						}
+						
+							fin.get(garbage);
+							fin.get(garbage);
+							fin.get(garbage);
+							fin.get(garbage);
+							fin.get(garbage);
+							std::cout << garbage << " " << temp[0] << " " << temp[1] << " " << temp[2] << " " << temp[3] << std::endl;
+					}
+					else {
+						std::cout << "hi";
+						fin >> z;
+						//x = garbage -'0';
+						temp[1] = z;
+						fin.get(garbage);
+						fin >> z;
 						x = garbage - '0';
-						point.push_back(x);
+						temp[2] = z;
+						fin.get(garbage);
+						fin.get(garbage);
+						if(garbage != 'f') {
+							x = garbage -'0';
+							temp[3] = z;
+							triangle = false;
+							fin.get(garbage);
+							fin.get(garbage);
+						}
 					}
-						fin.get(garbage);
-						fin.get(garbage);
-						fin.get(garbage);
-						fin.get(garbage);
-						fin.get(garbage);
-				}
-				else {
-					fin.get(garbage);
-					x = garbage -'0';
-					point.push_back(x);
-						std::cout << x << " ";
-					fin.get(garbage);
-					fin.get(garbage);
-					x = garbage - '0';
-					point.push_back(x);
-						std::cout << x << " ";
-					fin.get(garbage);
-					fin.get(garbage);
-					if(garbage != 'f') {
-						x = garbage -'0';
-						point.push_back(x);
-							std::cout << x << " " << std::endl;
-						triangle = false;
-						fin.get(garbage);
-						fin.get(garbage);
-					}
-				}
-				
-		}
-		}
-		else {}
+						for(int i=0; i<3; i++) {
+							retVertex.push_back(vertex1[temp[i]-1]);
+						}
 
+						if(!triangle) {
+							retVertex.push_back(vertex1[temp[0]-1]);
+							retVertex.push_back(vertex1[temp[2]-1]);
+							retVertex.push_back(vertex1[temp[3]-1]);
+						}
+			}*/
+		}
 	}
 	fin.close();
-	mysize = point.size();
-	int j = 0;
-	//std::cout << mysize << "E";
-	if(triangle) {
-		Vertex ret[mysize];
-		for(int i = 0; i<mysize; i++) {
-			ret[i].position[0] = vertex1[point[i] -1].position[0];
-			ret[i].position[1] = vertex1[point[i] -1].position[1];
-			ret[i].position[2] = vertex1[point[i] -1].position[2];
-			retVertex.push_back(ret[i]);
-		}
-	}
-	else {
-		Vertex ret[mysize / 2];
-		for(int i=0; i<mysize; i+=2) {
-			ret[i].position[0] = vertex1[point[j] -1].position[0];
-			ret[i].position[1] = vertex1[point[j+1] -1].position[1];
-			ret[i].position[2] = vertex1[point[j+2] -1].position[2];
-			
-			ret[i+1].position[0] = vertex1[point[j] -1].position[0];
-			ret[i+1].position[1] = vertex1[point[j+2] -1].position[1];
-			ret[i+1].position[2] = vertex1[point[j+3] -1].position[2];
-			j+=4;
-		}
-	}
 	return retVertex;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
