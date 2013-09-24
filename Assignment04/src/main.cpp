@@ -365,16 +365,19 @@ float getDT() {
 std::vector<Vertex> modelLoader(string fName) {
 	std::fstream fin;
 	string line;
-	float value;
+	float value[2];
 	Vertex vecTemp;
 	std::vector<Vertex> retVertex;
 	std::vector<Vertex> vertex1;
 	std::vector<int> point;
 	int mysize;
+	int x;
 	fin.open(fName);
+	char garbage;
 	
 	while(!fin.eof()) {
 		fin >> line;
+		std::cout << line << ", " << std::endl;
 		if(line =="#") {
 			fin.ignore(128, '\n');
 			fin.ignore(128, '\n');
@@ -385,24 +388,58 @@ std::vector<Vertex> modelLoader(string fName) {
 		} 
 		else if( line == "v" ) {
 			for(int i = 0; i < 3; i++) {
-				fin >> value;
-				vecTemp.position[i] = value;
+				fin >> value[0];
+				vecTemp.position[i] = value[0];
 			}
 			vertex1.push_back(vecTemp);
 		} 
-		else if(line == "s") {} 
 		else if(line == "f") {
-			for(int i=0; i<3; i++) {
-				fin >> value;
-				point.push_back(value);
-			}
+				std::cout << "F";
+				fin.get(garbage);
+				if(garbage == ' ') 
+					fin.get(garbage);
+				x = garbage -'0';
+				point.push_back(x);
+				std::cout << x << " ";
+				fin.get(garbage);
+				if(garbage != ' ') {
+					while(garbage != ' ')
+						fin.get(garbage);
+					fin.get(garbage);
+					x = garbage - '0';
+										std::cout << x << " ";
+					point.push_back(x);
+					fin.get(garbage);
+					if(garbage != ' ') {
+						while(garbage != ' ')
+							fin.get(garbage);
+						fin.get(garbage);
+						x = garbage - '0';
+											std::cout << x << " " << std::endl;
+						point.push_back(x);
+					}
+				}
+				else {
+					fin.get(garbage);
+					x = garbage -'0';
+					point.push_back(x);
+					std::cout << x << " ";
+					fin.get(garbage);
+					fin.get(garbage);
+					x = garbage - '0';
+					point.push_back(x);
+					std::cout << x << " " << std::endl;
+				}
+				
 		}
+		else {}
 
 	}
-	fin.close();	
+	fin.close();
 	mysize = point.size();
-	Vertex ret[mysize-3];
-	for(int i = 0; i<mysize-3; i++) {
+	std::cout << mysize;
+	Vertex ret[mysize];
+	for(int i = 0; i<mysize; i++) {
 		ret[i].position[0] = vertex1[point[i] -1].position[0];
 		ret[i].position[1] = vertex1[point[i] -1].position[1];
 		ret[i].position[2] = vertex1[point[i] -1].position[2];
