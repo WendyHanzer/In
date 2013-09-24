@@ -377,14 +377,11 @@ std::vector<Vertex> modelLoader(string fName) {
 	
 	while(!fin.eof()) {
 		fin >> line;
-		std::cout << line << ", " << std::endl;
 		if(line =="#") {
-			fin.ignore(128, '\n');
 			fin.ignore(128, '\n');
 		} 
 		else if(line == "o") {
 			fin >> line;
-			std::cout << "This is a " << line << std::endl;
 		} 
 		else if( line == "v" ) {
 			for(int i = 0; i < 3; i++) {
@@ -394,20 +391,18 @@ std::vector<Vertex> modelLoader(string fName) {
 			vertex1.push_back(vecTemp);
 		} 
 		else if(line == "f") {
-				std::cout << "F";
+				while(!fin.eof()) {
 				fin.get(garbage);
 				if(garbage == ' ') 
 					fin.get(garbage);
 				x = garbage -'0';
 				point.push_back(x);
-				std::cout << x << " ";
 				fin.get(garbage);
 				if(garbage != ' ') {
 					while(garbage != ' ')
 						fin.get(garbage);
 					fin.get(garbage);
 					x = garbage - '0';
-										std::cout << x << " ";
 					point.push_back(x);
 					fin.get(garbage);
 					if(garbage != ' ') {
@@ -415,29 +410,33 @@ std::vector<Vertex> modelLoader(string fName) {
 							fin.get(garbage);
 						fin.get(garbage);
 						x = garbage - '0';
-											std::cout << x << " " << std::endl;
 						point.push_back(x);
 					}
+						fin.get(garbage);
+						fin.get(garbage);
+						fin.get(garbage);
+						fin.get(garbage);
+						fin.get(garbage);
 				}
 				else {
 					fin.get(garbage);
 					x = garbage -'0';
 					point.push_back(x);
-					std::cout << x << " ";
 					fin.get(garbage);
 					fin.get(garbage);
 					x = garbage - '0';
 					point.push_back(x);
-					std::cout << x << " " << std::endl;
+					fin.get(garbage);
+					fin.get(garbage);
 				}
 				
+		}
 		}
 		else {}
 
 	}
 	fin.close();
 	mysize = point.size();
-	std::cout << mysize;
 	Vertex ret[mysize];
 	for(int i = 0; i<mysize; i++) {
 		ret[i].position[0] = vertex1[point[i] -1].position[0];
