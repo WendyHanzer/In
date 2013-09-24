@@ -372,6 +372,7 @@ std::vector<Vertex> modelLoader(string fName) {
 	std::vector<int> point;
 	int mysize;
 	int x;
+	bool triangle = true;
 	fin.open(fName);
 	char garbage;
 	
@@ -397,6 +398,7 @@ std::vector<Vertex> modelLoader(string fName) {
 					fin.get(garbage);
 				x = garbage -'0';
 				point.push_back(x);
+					std::cout << x << " ";
 				fin.get(garbage);
 				if(garbage != ' ') {
 					while(garbage != ' ')
@@ -422,12 +424,22 @@ std::vector<Vertex> modelLoader(string fName) {
 					fin.get(garbage);
 					x = garbage -'0';
 					point.push_back(x);
+						std::cout << x << " ";
 					fin.get(garbage);
 					fin.get(garbage);
 					x = garbage - '0';
 					point.push_back(x);
+						std::cout << x << " ";
 					fin.get(garbage);
 					fin.get(garbage);
+					if(garbage != 'f') {
+						x = garbage -'0';
+						point.push_back(x);
+							std::cout << x << " " << std::endl;
+						triangle = false;
+						fin.get(garbage);
+						fin.get(garbage);
+					}
 				}
 				
 		}
@@ -437,14 +449,30 @@ std::vector<Vertex> modelLoader(string fName) {
 	}
 	fin.close();
 	mysize = point.size();
-	Vertex ret[mysize];
-	for(int i = 0; i<mysize; i++) {
-		ret[i].position[0] = vertex1[point[i] -1].position[0];
-		ret[i].position[1] = vertex1[point[i] -1].position[1];
-		ret[i].position[2] = vertex1[point[i] -1].position[2];
-		retVertex.push_back(ret[i]);
+	int j = 0;
+	//std::cout << mysize << "E";
+	if(triangle) {
+		Vertex ret[mysize];
+		for(int i = 0; i<mysize; i++) {
+			ret[i].position[0] = vertex1[point[i] -1].position[0];
+			ret[i].position[1] = vertex1[point[i] -1].position[1];
+			ret[i].position[2] = vertex1[point[i] -1].position[2];
+			retVertex.push_back(ret[i]);
+		}
 	}
-
+	else {
+		Vertex ret[mysize / 2];
+		for(int i=0; i<mysize; i+=2) {
+			ret[i].position[0] = vertex1[point[j] -1].position[0];
+			ret[i].position[1] = vertex1[point[j+1] -1].position[1];
+			ret[i].position[2] = vertex1[point[j+2] -1].position[2];
+			
+			ret[i+1].position[0] = vertex1[point[j] -1].position[0];
+			ret[i+1].position[1] = vertex1[point[j+2] -1].position[1];
+			ret[i+1].position[2] = vertex1[point[j+3] -1].position[2];
+			j+=4;
+		}
+	}
 	return retVertex;
 }
 
