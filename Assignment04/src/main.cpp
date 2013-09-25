@@ -132,7 +132,7 @@ void render() {
 						  GL_FALSE,
 						  sizeof(Vertex),
 						  (void*)offsetof(Vertex,color));
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glDrawArrays(GL_TRIANGLES, 0, 5000);
     glDisableVertexAttribArray(loc_position);
     glDisableVertexAttribArray(loc_color);
 
@@ -153,7 +153,7 @@ void render() {
 						  GL_FALSE,
 						  sizeof(Vertex),
 						  (void*)offsetof(Vertex,color));
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glDrawArrays(GL_TRIANGLES, 0, 5000);
     glDisableVertexAttribArray(loc_position);
     glDisableVertexAttribArray(loc_color);
                            
@@ -395,19 +395,19 @@ std::vector<Vertex> modelLoader(string fName) {
 			while(!fin.eof()) {
 				fin >> z;
 				temp[0] = z;
-				fin.get(garbage);
+				garbage = fin.peek();
 				if(garbage == ' ') {
 					fin >> z;
 					temp[1] = z;
 					fin >> z;
 					temp[2] = z;
-					fin >> garbage;
-					if(garbage != 'f') {
+					garbage = fin.peek();
+					if(garbage == ' ') {
+						fin >> z;
 						triangle = false;
-						z = garbage - '0';
 						temp[3] = z;
-						fin >> garbage;
 					}
+					fin >> garbage;
 				}
 				else {
 					fin >> gar;
@@ -417,14 +417,14 @@ std::vector<Vertex> modelLoader(string fName) {
 					fin >> z;
 					temp[2] = z;
 					fin >> gar;
-					fin >> garbage;
-					if(garbage != 'f') {
+					garbage = fin.peek();
+					if(garbage == ' ') {
+						fin >> z;
 						triangle = false;
-						z = garbage - '0';
 						temp[3] = z;
 						fin >> gar;
-						fin >> garbage;
 					}
+					fin >> garbage;
 				}
 				for(int i=0; i<3; i++) 
 					retVertex.push_back(vertex1[temp[i]-1]);
@@ -434,109 +434,10 @@ std::vector<Vertex> modelLoader(string fName) {
 					retVertex.push_back(vertex1[temp[2]-1]);
 					retVertex.push_back(vertex1[temp[3]-1]);
 				}
+				triangle = true;
 				std::cout << temp[0] << " " << temp[1] << " " << temp[2] << " " << temp[3] << std::endl;
 				//std::cin >> z;
 			}
-				/*
-				while(garbage != ' ')
-					fin.get(garbage);
-				fin >> z;
-				temp[1] = z;
-				fin.get(garbage);
-				while(garbage != ' ')
-					fin.get(garbage);
-				fin >> z;
-				temp[2] = z;
-				fin.get(garbage);
-				while(garbage != ' ') {
-					fin.get(garbage);
-					if(garbage == '\n') {
-						triangle = true;
-					}
-					std::cout << garbage << " ";
-				}
-
-				std::cout << temp[0] << " " << temp[1] << " " << temp[2] << " " << temp[3] << std::endl;
-				
-				for(int i=0; i<3; i++) {
-					retVertex.push_back(vertex1[temp[i]-1]);
-				}
-
-				//if(!triangle) {
-			//		retVertex.push_back(vertex1[temp[0]-1]);
-			//		retVertex.push_back(vertex1[temp[2]-1]);
-			//		retVertex.push_back(vertex1[temp[3]-1]);
-			//	}
-			}
-					
-		/*
-				while(!fin.eof()) {
-					fin.get(garbage);
-					if(garbage == ' ') 
-						fin >> z;
-					//x = garbage -'0';
-					temp[0] = z;
-					fin.get(garbage);
-					if(garbage != ' ') {
-						while(garbage != ' ')
-							fin.get(garbage);
-						fin >> z;
-						//x = garbage - '0';
-						temp[1] = z;
-						fin.get(garbage);
-						if(garbage != ' ') {
-							while(garbage != ' ')
-								fin.get(garbage);
-							fin >> z;
-							//x = garbage - '0';
-							temp[2] = z;
-							fin.get(garbage);
-							if(garbage != ' ') {
-								triangle = false;
-								while(garbage != ' ')
-									fin.get(garbage);
-								fin >> z;
-								//x = garbage -'0';
-								temp[3] = z;
-							}
-						}
-						
-							fin.get(garbage);
-							fin.get(garbage);
-							fin.get(garbage);
-							fin.get(garbage);
-							fin.get(garbage);
-							std::cout << garbage << " " << temp[0] << " " << temp[1] << " " << temp[2] << " " << temp[3] << std::endl;
-					}
-					else {
-						std::cout << "hi";
-						fin >> z;
-						//x = garbage -'0';
-						temp[1] = z;
-						fin.get(garbage);
-						fin >> z;
-						x = garbage - '0';
-						temp[2] = z;
-						fin.get(garbage);
-						fin.get(garbage);
-						if(garbage != 'f') {
-							x = garbage -'0';
-							temp[3] = z;
-							triangle = false;
-							fin.get(garbage);
-							fin.get(garbage);
-						}
-					}
-						for(int i=0; i<3; i++) {
-							retVertex.push_back(vertex1[temp[i]-1]);
-						}
-
-						if(!triangle) {
-							retVertex.push_back(vertex1[temp[0]-1]);
-							retVertex.push_back(vertex1[temp[2]-1]);
-							retVertex.push_back(vertex1[temp[3]-1]);
-						}
-			}*/
 		}
 	}
 	fin.close();
