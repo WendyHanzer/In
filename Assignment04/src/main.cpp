@@ -370,7 +370,7 @@ std::vector<Vertex> modelLoader(string fName) {
 	std::vector<Vertex> retVertex;
 	std::vector<Vertex> vertex1;
 	std::vector<int> point;
-	int x, z;
+	int z;
 	bool triangle = true;
 	fin.open(fName);
 	char garbage;
@@ -425,6 +425,11 @@ std::vector<Vertex> modelLoader(string fName) {
 						fin >> gar;
 					}
 					fin >> garbage;
+				}
+				if(garbage =='u') {
+					fin >> gar >> gar;
+					fin.get(garbage);
+					fin.get(garbage);
 				}
 				for(int i=0; i<3; i++) 
 					retVertex.push_back(vertex1[temp[i]-1]);
