@@ -25,6 +25,7 @@ float lastRotate = 0.0f;
 string vsFile = "vs.txt";
 string fsFile = "fs.txt";
 string objectFile;
+int num = 0;
 GLuint program;
 GLuint vbo_geometry;
 GLuint vbo_geometry2;
@@ -132,10 +133,10 @@ void render() {
 						  GL_FALSE,
 						  sizeof(Vertex),
 						  (void*)offsetof(Vertex,color));
-    glDrawArrays(GL_TRIANGLES, 0, 5000);
+    glDrawArrays(GL_TRIANGLES, 0, num*4);
     glDisableVertexAttribArray(loc_position);
     glDisableVertexAttribArray(loc_color);
-
+/*
 	// now with more magic
 	glUniformMatrix4fv(loc_mvpmat, 1, GL_FALSE, glm::value_ptr(mvp2));
     glEnableVertexAttribArray(loc_position);
@@ -153,10 +154,10 @@ void render() {
 						  GL_FALSE,
 						  sizeof(Vertex),
 						  (void*)offsetof(Vertex,color));
-    glDrawArrays(GL_TRIANGLES, 0, 5000);
+    glDrawArrays(GL_TRIANGLES, 0, num*4);
     glDisableVertexAttribArray(loc_position);
     glDisableVertexAttribArray(loc_color);
-                           
+  */                         
     glutSwapBuffers();
 }
 
@@ -172,13 +173,13 @@ void update() {
 	if(clockdir) { 
    		angle -= dt * M_PI/2;
     	model = glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * sin(angle), 0.0, 4.0 * cos(angle)));
-    	model2 = glm::translate( model, glm::vec3(4.0 * sin(angle2), 0.0, 4.0 * cos(angle2))) ;
-		model = glm::rotate( model, lastRotate, glm::vec3(0.0f, 1.0f, 0.0f));
+    	//model2 = glm::translate( model, glm::vec3(4.0 * sin(angle2), 0.0, 4.0 * cos(angle2))) ;
+		model = glm::rotate( model, lastRotate/2, glm::vec3(0.0f, 1.0f, 0.0f));
 	} else {
    		angle += dt * M_PI/2;
     	model = glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * sin(angle), 0.0, 4.0 * cos(angle)));
-    	model2 = glm::translate( model, glm::vec3(4.0 * sin(angle2), 0.0, 4.0 * cos(angle2)));
-		model = glm::rotate( model, lastRotate, glm::vec3(0.0f, 1.0f, 0.0f));
+    	//model2 = glm::translate( model, glm::vec3(4.0 * sin(angle2), 0.0, 4.0 * cos(angle2)));
+		model = glm::rotate( model, lastRotate/2, glm::vec3(0.0f, 1.0f, 0.0f));
 	}
 
 	// check for rotate flag
@@ -296,23 +297,22 @@ bool initialize() {
 	std::vector<Vertex> geoTemp;
 	geoTemp = modelLoader(objectFile);
 	int x = geoTemp.size();
-	Vertex geometry[x];
+	Vertex *geometry = new Vertex[x];
 	for(int i=0; i<x; i++) {
-		geometry[i].position[0] = geoTemp[i].position[0];
-		geometry[i].position[1] = geoTemp[i].position[1];
-		geometry[i].position[2] = geoTemp[i].position[2];
+		geometry[i] = geoTemp[i];
 		geometry[i].color[0] = 1.0f;
 		geometry[i].color[1] = 1.0f;
 		geometry[i].color[2] = 1.0f;
+		//std::cout << geometry[i].position[0] << " " << geometry[i].position[1] << " " << geometry[i].position[2] << std::endl;
 	}
 
     glGenBuffers(1, &vbo_geometry);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_geometry);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(geometry), geometry, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(geometry)*x*4, geometry, GL_STATIC_DRAW);
 
-    glGenBuffers(1, &vbo_geometry2);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_geometry2);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(geometry), geometry, GL_STATIC_DRAW);
+    //glGenBuffers(1, &vbo_geometry2);
+    //glBindBuffer(GL_ARRAY_BUFFER, vbo_geometry2);
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(geometry)*x*4, geometry, GL_STATIC_DRAW);
 
 	if(!shaderLoader(vsFile, fsFile)) {
 		return false;
@@ -342,6 +342,7 @@ bool initialize() {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
+	delete geometry;
     return true;
 }
 
@@ -440,7 +441,8 @@ std::vector<Vertex> modelLoader(string fName) {
 					retVertex.push_back(vertex1[temp[3]-1]);
 				}
 				triangle = true;
-				std::cout << temp[0] << " " << temp[1] << " " << temp[2] << " " << temp[3] << std::endl;
+				num++;
+				//std::cout << temp[0] << " " << temp[1] << " " << temp[2] << " " << temp[3] << std::endl;
 				//std::cin >> z;
 			}
 		}
