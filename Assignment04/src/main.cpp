@@ -48,6 +48,7 @@ void mouseClicks(int, int, int, int);
 bool initialize();
 void cleanUp();
 float getDT();
+int zoom = 1.0f;
 std::vector<Vertex> modelLoader(string);
 std::chrono::time_point<std::chrono::high_resolution_clock> t1,t2;
 
@@ -172,25 +173,27 @@ void update() {
 	// check which direction to orbit
 	if(clockdir) { 
    		angle -= dt * M_PI/2;
-    	model = glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * sin(angle), 0.0, 4.0 * cos(angle)));
+    	//model = glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * sin(angle), 0.0, 4.0 * cos(angle)));
     	//model2 = glm::translate( model, glm::vec3(4.0 * sin(angle2), 0.0, 4.0 * cos(angle2))) ;
-		model = glm::rotate( model, lastRotate/2, glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::rotate( glm::mat4(1.0f), angle*30.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(glm::mat4(1.0f),glm::vec3(zoom));
 	} else {
    		angle += dt * M_PI/2;
-    	model = glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * sin(angle), 0.0, 4.0 * cos(angle)));
+    	//model = glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * sin(angle), 0.0, 4.0 * cos(angle)));
     	//model2 = glm::translate( model, glm::vec3(4.0 * sin(angle2), 0.0, 4.0 * cos(angle2)));
-		model = glm::rotate( model, lastRotate/2, glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::rotate( glm::mat4(1.0f), angle*30.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(glm::mat4(1.0f),glm::vec3(zoom));
 	}
 
 	// check for rotate flag
 	if(rotate) {
-		model = glm::rotate( model, lastRotate, glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::rotate( model, lastRotate/2, glm::vec3(0.0f, 1.0f, 0.0f));
 
 		// check for which direction to rotate
 		if(!back) {
-			lastRotate += (dt * M_PI/2)*100.0f;
+			lastRotate += (dt * M_PI/2)*10.0f;
 		} else {
-			lastRotate -= (dt * M_PI/2)*100.0f;
+			lastRotate -= (dt * M_PI/2)*10.0f;
 		}
 	}
 
@@ -212,6 +215,14 @@ void keyboard(unsigned char key, int x_pos, int y_pos) {
 			break;
 		case 'a':
 			back = !back;
+			break;
+		case '+':
+			zoom++;
+			//view = glm::lookAt( glm::vec3(0.0, 8.0, zoom), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+			break;
+		case '-':
+			zoom--;
+			//view = glm::lookAt( glm::vec3(0.0, 8.0, zoom), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
 			break;
 	}
 }
@@ -300,10 +311,7 @@ bool initialize() {
 	Vertex *geometry = new Vertex[x];
 	for(int i=0; i<x; i++) {
 		geometry[i] = geoTemp[i];
-		geometry[i].color[0] = 1.0f;
-		geometry[i].color[1] = 1.0f;
-		geometry[i].color[2] = 1.0f;
-		//std::cout << geometry[i].position[0] << " " << geometry[i].position[1] << " " << geometry[i].position[2] << std::endl;
+		//std::cout << geometry[i].color[0] << " " << geometry[i].color[1] << " " << geometry[i].color[2] << std::endl;
 	}
 
     glGenBuffers(1, &vbo_geometry);
@@ -389,6 +397,9 @@ std::vector<Vertex> modelLoader(string fName) {
 			for(int i = 0; i < 3; i++) {
 				fin >> value[0];
 				vecTemp.position[i] = value[0];
+				vecTemp.color[0] = 0.214f;
+				vecTemp.color[1] = 0.214f;
+				vecTemp.color[2] = 0.214f;
 			}
 			vertex1.push_back(vecTemp);
 		} 
