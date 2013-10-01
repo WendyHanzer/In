@@ -140,31 +140,10 @@ void render() {
 						  GL_FALSE,
 						  sizeof(Vertex),
 						  (void*)offsetof(Vertex,color));
-    glDrawArrays(GL_TRIANGLES, 0, num*4);
+    glDrawArrays(GL_TRIANGLES, 0, num);
     glDisableVertexAttribArray(loc_position);
     glDisableVertexAttribArray(loc_color);
-/*
-	// now with more magic
-	glUniformMatrix4fv(loc_mvpmat, 1, GL_FALSE, glm::value_ptr(mvp2));
-    glEnableVertexAttribArray(loc_position);
-    glEnableVertexAttribArray(loc_color);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_geometry2);
-    glVertexAttribPointer(loc_position,
-						  3,
-						  GL_FLOAT,
-						  GL_FALSE,
-						  sizeof(Vertex),
-						  0);
-    glVertexAttribPointer(loc_color,
-						  3,
-						  GL_FLOAT,
-						  GL_FALSE,
-						  sizeof(Vertex),
-						  (void*)offsetof(Vertex,color));
-    glDrawArrays(GL_TRIANGLES, 0, num*4);
-    glDisableVertexAttribArray(loc_position);
-    glDisableVertexAttribArray(loc_color);
-  */                         
+                     
     glutSwapBuffers();
 }
 
@@ -224,11 +203,9 @@ void keyboard(unsigned char key, int x_pos, int y_pos) {
 			break;
 		case '+':
 			zoom++;
-			//view = glm::lookAt( glm::vec3(0.0, 8.0, zoom), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
 			break;
 		case '-':
 			zoom--;
-			//view = glm::lookAt( glm::vec3(0.0, 8.0, zoom), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
 			break;
 	}
 }
@@ -360,7 +337,6 @@ bool initialize() {
 void cleanUp() {
     glDeleteProgram(program);
     glDeleteBuffers(1, &vbo_geometry);
-    glDeleteBuffers(1, &vbo_geometry2);
 }
 
 // time things
@@ -377,114 +353,35 @@ std::vector<Vertex> modelLoader(string fName) {
 	std::vector<Vertex> retVertex;
 	Assimp::Importer importer;
 	const aiScene *scene = importer.ReadFile(fName, aiProcess_Triangulate);
-
-	for(int i=0; i<scene->mNumMeshes; i++) {
+	aiColor3D color (0.f,0.f,0.f);
+	aiString name;
+	
+	for(unsigned int i=0; i<scene->mNumMeshes; i++) {
+		std::cout << scene->mNumMaterials << " ";
 		const aiMesh* mesh = scene->mMeshes[i];
-		for(int j=0; j<mesh->mNumFaces; j++) {
+		const aiMaterial* mat = scene->mMaterials[i+1];
+		
+		if(scene->mNumMaterials > 1) {
+			std::cout << "hi";
+			mat->Get(AI_MATKEY_NAME,name);
+			mat->Get(AI_MATKEY_COLOR_DIFFUSE,color);
+			std::cout << name.data;
+		}
+		
+		for(unsigned int j=0; j<mesh->mNumFaces; j++) {
 			const aiFace &face = mesh->mFaces[j];
 			for(int k=0; k<3; k++) {
 				aiVector3D pos = mesh->mVertices[face.mIndices[k]];
 				vecTemp.position[0] = pos[0];
 				vecTemp.position[1] = pos[1];
 				vecTemp.position[2] = pos[2];
+				vecTemp.color[0] = color[0];
+				vecTemp.color[1] = color[1];
+				vecTemp.color[2] = color[2];
 				retVertex.push_back(vecTemp);
 				num++;
 			}
 		}
 	}
 	return retVertex;
-
-		
-
-/*
-	std::fstream fin;
-	string line;
-	float value[2];
-	int temp[4];
-	Vertex vecTemp;
-	std::vector<Vertex> retVertex;
-	std::vector<Vertex> vertex1;
-	std::vector<int> point;
-	int z;
-	bool triangle = true;
-	fin.open(fName);
-	char garbage;
-	string gar;
-	
-	while(!fin.eof()) {
-		fin >> line;
-		if(line =="#") {
-			fin.ignore(128, '\n');
-		} 
-		else if(line == "o") {
-			fin >> line;
-		} 
-		else if( line == "v" ) {
-			for(int i = 0; i < 3; i++) {
-				fin >> value[0];
-				vecTemp.position[i] = value[0];
-				vecTemp.color[0] = 0.214f;
-				vecTemp.color[1] = 0.214f;
-				vecTemp.color[2] = 0.214f;
-			}
-			vertex1.push_back(vecTemp);
-		} 
-		else if(line == "f") {
-			while(!fin.eof()) {
-				fin >> z;
-				temp[0] = z;
-				garbage = fin.peek();
-				if(garbage == ' ') {
-					fin >> z;
-					temp[1] = z;
-					fin >> z;
-					temp[2] = z;
-					garbage = fin.peek();
-					if(garbage == ' ') {
-						fin >> z;
-						triangle = false;
-						temp[3] = z;
-					}
-					fin >> garbage;
-				}
-				else {
-					fin >> gar;
-					fin >> z;
-					temp[1] = z;
-					fin >> gar;
-					fin >> z;
-					temp[2] = z;
-					fin >> gar;
-					garbage = fin.peek();
-					if(garbage == ' ') {
-						fin >> z;
-						triangle = false;
-						temp[3] = z;
-						fin >> gar;
-					}
-					fin >> garbage;
-				}
-				if(garbage =='u') {
-					fin >> gar >> gar;
-					fin.get(garbage);
-					fin.get(garbage);
-				}
-				for(int i=0; i<3; i++) 
-					retVertex.push_back(vertex1[temp[i]-1]);
-
-				if(!triangle) {
-					retVertex.push_back(vertex1[temp[0]-1]);
-					retVertex.push_back(vertex1[temp[2]-1]);
-					retVertex.push_back(vertex1[temp[3]-1]);
-				}
-				triangle = true;
-				num++;
-				//std::cout << temp[0] << " " << temp[1] << " " << temp[2] << " " << temp[3] << std::endl;
-				//std::cin >> z;
-			}
-		}
-	}
-	fin.close();
-	return retVertex;
-	*/
 }
