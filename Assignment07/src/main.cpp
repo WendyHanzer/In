@@ -19,15 +19,13 @@ bool rotate = true;
 bool back = false;
 bool clockdir = true;
 float lastRotate = 0.0f;
-string vsFile = "vs.txt";
-string fsFile = "fs.txt";
-string vsFileT = "vsT.txt";
-string fsFileT = "fsT.txt";
+string vsFile = "vsT.txt";
+string fsFile = "fsT.txt";
 string objectFile;
 int num = 0;
 GLuint program;
 GLuint vbo_geometry;
-GLuint IBO;
+GLuint vbo_texcoords;
 GLint loc_mvpmat;
 GLint loc_position;
 GLint loc_color;
@@ -55,6 +53,7 @@ int main(int argc, char **argv) {
 	objectFile = argv[1];
 
 	// Initialize things
+	Magick::InitializeMagick(*argv); 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowSize(w, h);
@@ -82,8 +81,9 @@ int main(int argc, char **argv) {
     bool init = initialize();
 
     if(init) {
-    	glUniform1i(gSampler, 0);
     	pTexture = new texLoader(GL_TEXTURE_2D, "capsule0.jpg");
+    	if(!pTexture->load())
+    		return 1;
         t1 = std::chrono::high_resolution_clock::now();
         glutMainLoop();
     }
@@ -117,6 +117,8 @@ void render() {
 
     glUseProgram(program);
     glUniformMatrix4fv(loc_mvpmat, 1, GL_FALSE, glm::value_ptr(mvp));
+    glUniform1i(gSampler, 0);
+    pTexture->bind(GL_TEXTURE0);
 
 	// magic
     glEnableVertexAttribArray(loc_position);
@@ -133,8 +135,7 @@ void render() {
 						  GL_FLOAT,
 						  GL_FALSE,
 						  sizeof(Vertex),
-						  (const GLvoid*)12);
-	pTexture->bind(GL_TEXTURE0);
+						  0);
     glDrawArrays(GL_TRIANGLES, 0, num);
     glDisableVertexAttribArray(loc_position);
     glDisableVertexAttribArray(loc_tex);
@@ -271,8 +272,6 @@ bool shaderLoader(string fvs, string ffs){
         std::cerr << "[F] THE SHADER PROGRAM FAILED TO LINK" << std::endl;
         return false;
     }
-    
-    gSampler = glGetUniformLocation(program, "gSampler");
 
 	delete ret;
 	delete ret2;
@@ -291,6 +290,12 @@ bool initialize() {
 	for(int i=0; i<x; i++) {
 		geometry[i] = geoTemp[i];
 	}
+	GLfloat texcoords[] = {
+	0.0,0.0,
+	1.0,0.0,
+	1.0,1.0,
+	0.0,1.0,
+	};
 
     glGenBuffers(1, &vbo_geometry);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_geometry);
@@ -317,6 +322,8 @@ bool initialize() {
         std::cerr << "[F] MVPMATRIX NOT FOUND" << std::endl;
         return false;
     }
+
+    gSampler = glGetUniformLocation(program, "gSampler");
 
     view = glm::lookAt( glm::vec3(0.0, 8.0, -16.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
     projection = glm::perspective( 45.0f, float(w)/float(h), 0.01f, 100.0f); 
