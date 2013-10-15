@@ -1,0 +1,7 @@
+attribute vec3 v_position;
+attribute vec2 v_tex;
+out vec2 TexCoord2;
+void main() {
+	gl_Position = mvpMatrix * vec4(v_position, 1.0);
+	TexCoord2 = texCoord;
+}
