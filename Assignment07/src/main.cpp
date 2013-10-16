@@ -1,351 +1,580 @@
-#include <GL/glew.h>
+#include <GL/glew.h> // glew must be included before the main gl libs
+
+// include freeglut on linux for glutBitmapString
+#ifndef __APPLE__
+#include <GL/freeglut.h> // doing otherwise causes compiler shouting
+// else include glut for apple because freeglut does not work
+#else
 #include <GL/glut.h>
+#endif
+
 #include <iostream>
 #include <fstream>
 #include <chrono>
 #include <string>
+#include <streambuf>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <vector>
-#include "modelLoader.h"
-#include "texLoader.h"
+#include <glm/gtc/type_ptr.hpp> //Makes passing matrices to shaders easier
 
-using std::string;
+#include "../src/vertex.h"
+#include "../src/shaderloader.h"
+#include "../src/modelloader.h"
 
-// Precious Globals
-int w = 640, h = 480;
-bool rotate = true;
-bool back = false;
-bool clockdir = true;
-float lastRotate = 0.0f;
-string vsFile = "vsT.txt";
-string fsFile = "fsT.txt";
-string objectFile;
-int num = 0;
-GLuint program;
-GLuint vbo_geometry;
-GLuint vbo_texcoords;
-GLint loc_mvpmat;
+
+//--Data types
+//This object will define the attributes of a vertex(position, color, etc...)
+
+
+//--Evil Global variables
+//Just for this example!
+int w = 640, h = 480;// Window size
+GLuint program;// The GLSL program handle
+GLuint vbo_geometry;// VBO handle for our geometry
+
+//uniform locations
+GLint loc_mvpmat;// Location of the modelviewprojection matrix in the shader
+
+//attribute locations
 GLint loc_position;
 GLint loc_color;
-GLint loc_tex;
-GLuint gSampler;
-glm::mat4 model;
-glm::mat4 view;
-glm::mat4 projection;
-glm::mat4 mvp;
+GLint loc_texture;
+
+GLint loc_texCoord;
+GLuint textureId;
+
+//transform matrices
+glm::mat4 model;//obj->world each object should have its own model matrix
+glm::mat4 moon;
+glm::mat4 view;//world->eye
+glm::mat4 projection;//eye->clip
+glm::mat4 mvp;//premultiplied modelviewprojection
+
+//shaders
+ShaderLoader vertexShader(GL_VERTEX_SHADER);
+ShaderLoader fragmentShader(GL_FRAGMENT_SHADER);
+
+ModelLoader ml;
+// program control variables
+bool paused = false;
+bool reversedDirection = false;
+bool reversedRotation = false;
+std::string directionText = "Orbit Direction: Counter-Clockwise";
+std::string modelFile = "cube.obj";
+std::string vertexFile = "shaders/texvert.glslv";
+std::string fragmentFile = "shaders/texfrag.glslf";
+int triangleCount = 0;
+float zoom = -16.0f;
+int textureCount = 0;
+
+void parseCommandLine(int argc, char **argv);
+//--GLUT Callbacks
 void render();
 void update();
-void reshape(int, int);
-void specKeyboard(int, int, int);
-void keyboard(unsigned char, int, int);
-void menu(int);
-void mouseClicks(int, int, int, int);
+void reshape(int n_w, int n_h);
+void keyboard(unsigned char key, int x_pos, int y_pos);
+void keyboardSpecial(int key, int x_pos, int y_pos);
+void mouse(int button, int state, int x, int y);
+
+//--Resource management
 bool initialize();
 void cleanUp();
+
+//--Random time things
 float getDT();
-int zoom = 1.0f;
-texLoader* pTexture = NULL;
 std::chrono::time_point<std::chrono::high_resolution_clock> t1,t2;
 
-int main(int argc, char **argv) {
-	objectFile = argv[1];
+//--GLUT Menu Stuff
+#define MENU_PAUSE 1
+#define MENU_REVERSE_DIRECTION 2
+#define MENU_REVERSE_ROTATION 3
+#define MENU_EXIT 4
+void createMenus();
+void menuActions(int option);
 
-	// Initialize things
-	Magick::InitializeMagick(*argv); 
+// font rendering (code found from linux.die.net)
+void renderText(const char *text);
+
+//--Main
+int main(int argc, char **argv)
+{
+	parseCommandLine(argc, argv);
+    // Initialize glut
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH | GLUT_RGBA);
     glutInitWindowSize(w, h);
+    // Name and create the Window
     glutCreateWindow("Matrix Example");
-    GLenum status = glewInit();
 
-    if( status != GLEW_OK) {
+    // Now that the window is created the GL context is fully set up
+    // Because of that we can now initialize GLEW to prepare work with shaders
+    GLenum status = glewInit();
+    if( status != GLEW_OK)
+    {
         std::cerr << "[F] GLEW NOT INITIALIZED: ";
         std::cerr << glewGetErrorString(status) << std::endl;
         return -1;
     }
 
-	// create menu and entries along with mouse and keyboard
-	glutCreateMenu(menu);
-	glutAddMenuEntry("Toggle Rotate", 1);
-	glutAddMenuEntry("Exit Program", 2);
-	glutAttachMenu(GLUT_RIGHT_BUTTON);
-	glutMouseFunc(mouseClicks);
-    glutDisplayFunc(render);
-    glutReshapeFunc(reshape);
-    glutIdleFunc(update);
-    glutKeyboardFunc(keyboard);
-	glutSpecialFunc(specKeyboard);
+    // Set all of the callbacks to GLUT that we need
+    glutDisplayFunc(render);// Called when its time to display
+    glutReshapeFunc(reshape);// Called if the window is resized
+    glutIdleFunc(update);// Called if there is nothing else to do
+    glutKeyboardFunc(keyboard);// Called if there is keyboard input
+    glutSpecialFunc(keyboardSpecial); // called for non-ascii keyboard input
+    glutMouseFunc(mouse); // called for mouse input
 
+    // Initialize all of our resources(shaders, geometry)
     bool init = initialize();
-
-    if(init) {
-    	pTexture = new texLoader(GL_TEXTURE_2D, "capsule0.jpg");
-    	if(!pTexture->load())
-    		return 1;
+    if(init)
+    {
         t1 = std::chrono::high_resolution_clock::now();
         glutMainLoop();
     }
 
+    // Clean up after ourselves
     cleanUp();
     return 0;
 }
 
-// my menu function
-void menu(int value) {
-	if(value == 1)
-		rotate = !rotate;
-	if(value == 2)
-		exit(0);
-}
+void parseCommandLine(int argc, char **argv)
+{
+	std::string arg;
 
-// my mouse click function
-void mouseClicks(int button, int state, int x, int y) {
-	// if left button is pressed then rotate backwards
-	if((button == GLUT_LEFT_BUTTON) && (state == GLUT_DOWN)) {
-		back = !back;
+	for(int i = 1; i < argc; i++) {
+		arg = argv[i];
+
+		if(arg == "-m") {
+			i++;
+			if(i == argc) {
+				std::cerr << "Incorrect use of -m option" << std::endl;
+				exit(-1);
+			}
+			modelFile = argv[i];
+		}
+
+		else if(arg == "-v") {
+			i++;
+			if(i == argc) {
+				std::cerr << "Incorrect use of -v option" << std::endl;
+				exit(-1);
+			}
+
+			vertexFile = argv[i];
+		}
+
+		else if(arg == "-f") {
+			i++;
+			if(i == argc) {
+				std::cerr << "Incorrect use of -f option" << std::endl;
+				exit(-1);
+			}
+
+			fragmentFile = argv[i];
+		}
+
+		else {
+			std::cerr << "Unknown command line option: " << arg << std::endl;
+			exit(-1);
+		}
 	}
 }
 
-void render() {
+//--Implementations
+void render()
+{
+    //--Render the scene
+
+    //clear the screen
     glClearColor(0.0, 0.0, 0.2, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// The mvp matrix for the new and original model
+    //premultiply the matrix for this example
     mvp = projection * view * model;
 
+    //enable the shader program
     glUseProgram(program);
-    glUniformMatrix4fv(loc_mvpmat, 1, GL_FALSE, glm::value_ptr(mvp));
-    glUniform1i(gSampler, 0);
-    pTexture->bind(GL_TEXTURE0);
 
-	// magic
+    //upload the matrix to the shader
+    glUniformMatrix4fv(loc_mvpmat, 1, GL_FALSE, glm::value_ptr(mvp));	
+		
+    //set up the Vertex Buffer Object so it can be drawn
     glEnableVertexAttribArray(loc_position);
-    glEnableVertexAttribArray(loc_tex);
+    glEnableVertexAttribArray(loc_texCoord);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_geometry);
-    glVertexAttribPointer(loc_position,
-						  3,
-						  GL_FLOAT,
-						  GL_FALSE,
-						  sizeof(Vertex),
-						  0);
-    glVertexAttribPointer(loc_tex,
+    //set pointers into the vbo for each of the attributes(position and color)
+    glVertexAttribPointer( loc_position,//location of attribute
+                           3,//number of elements
+                           GL_FLOAT,//type
+                           GL_FALSE,//normalized?
+                           sizeof(Vertex),//stride
+                           0);//offset
+
+	glVertexAttribPointer(loc_texCoord,
 						  2,
 						  GL_FLOAT,
 						  GL_FALSE,
 						  sizeof(Vertex),
-						  0);
-    glDrawArrays(GL_TRIANGLES, 0, num);
+						  (void*) offsetof(Vertex,textCoord));
+/*
+    glVertexAttribPointer( loc_color,
+                           3,
+                           GL_FLOAT,
+                           GL_FALSE,
+                           sizeof(Vertex),
+                           (void*)offsetof(Vertex,color));
+*/
+	glUniform1i(loc_texture,0);
+	glUniform1i(loc_texture,1);
+	for(int i = 0; i < textureCount; i++) {
+		//glUniform1i(loc_texture,i);
+		glActiveTexture(GL_TEXTURE0 + i);	
+		glBindTexture(GL_TEXTURE_2D,ml.getTexture(i));
+		glUniform1i(loc_texture,i);
+	}
+
+    glDrawArrays(GL_TRIANGLES, 0, triangleCount*3);//mode, starting index, count
+/*    mvp = projection * view * moon;
+    glUniformMatrix4fv(loc_mvpmat, 1, GL_FALSE, glm::value_ptr(mvp));
+	glDrawArrays(GL_TRIANGLES, 0, triangleCount*4);
+*/
+    //clean up
     glDisableVertexAttribArray(loc_position);
-    glDisableVertexAttribArray(loc_tex);
-                     
+    glDisableVertexAttribArray(loc_texCoord);
+    
+    renderText(directionText.c_str());
+                           
+    //swap the buffers
     glutSwapBuffers();
 }
 
-void update() {
-    static float angle = 0.0;
-	static float angle2 = 0.0;
-    float dt = getDT();
+void update()
+{
+	if(paused) {
+	    t1 = std::chrono::high_resolution_clock::now();
+		return;
+	}
+    //total time
+    static float angle = 0.0f;
+    static float rotationAngle = 0.0f;
+    //static float moonAngle = 0.0f;
+   // static float moonRotation = 0.0f;
+    float dt = getDT();// if you have anything moving, use dt.
 
-
-	angle2 += (dt * M_PI/2) + (dt * M_PI/2);
-
-	// check which direction to orbit
-	if(clockdir) { 
-   		angle -= dt * M_PI/2;
-		model = glm::rotate( glm::mat4(1.0f), angle*30.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-		model = glm::scale(glm::mat4(1.0f),glm::vec3(zoom));
-	} else {
-   		angle += dt * M_PI/2;
-		model = glm::rotate( glm::mat4(1.0f), angle*30.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-		model = glm::scale(glm::mat4(1.0f),glm::vec3(zoom));
+    
+    if(reversedDirection) {
+        angle -= dt * M_PI/2; //move through 90 degrees a second
+   }
+        
+    else {
+    	angle += dt * M_PI/2;
 	}
 
-	// check for rotate flag
-	if(rotate) {
-		model = glm::rotate( model, lastRotate/2, glm::vec3(0.0f, 1.0f, 0.0f));
+	//moonAngle += dt * M_PI;
 
-		// check for which direction to rotate
-		if(!back) {
-			lastRotate += (dt * M_PI/2)*10.0f;
-		} else {
-			lastRotate -= (dt * M_PI/2)*10.0f;
-		}
+    // rotate the world around center of the frame
+    model = glm::translate( glm::mat4(1.0f), glm::vec3(1.0 * sin(angle), 0.0, 1.0 * cos(angle)));
+    
+    // rotate the moon around the planet
+    //moon = glm::translate(model, glm::vec3(4.0 * sin(moonAngle), 0.0, 4.0 * cos(moonAngle)));
+    
+    if(reversedRotation) {
+        rotationAngle -= dt * M_PI/3;	
+    }
+    
+    else {
+        rotationAngle += dt * M_PI/3;
 	}
 
-    glutPostRedisplay();
+	//moonRotation += dt * M_PI;
+	
+	model = glm::rotate(model, float(rotationAngle * 180.0/M_PI), glm::vec3(0.0,1.0,0.0));
+	//moon = glm::rotate(moon, float(moonRotation * 180.0/M_PI), glm::vec3(0.0,1.0,0.0));
+    // moon = glm::scale(moon, glm::vec3(0.5,0.5,0.5));   
+    // Update the state of the scene
+    glutPostRedisplay();//call the display callback
+
 }
 
-void reshape(int n_w, int n_h) {
+
+void reshape(int n_w, int n_h)
+{
     w = n_w;
     h = n_h;
+    //Change the viewport to be correct
     glViewport( 0, 0, w, h);
+    //Update the projection matrix as well
+    //See the init function for an explaination
     projection = glm::perspective(45.0f, float(w)/float(h), 0.01f, 100.0f);
+
 }
 
-void keyboard(unsigned char key, int x_pos, int y_pos) {
-	// if esc then exit else if a then rotate backwards
-	switch(key) {
-		case 27:
-			exit(0);
-			break;
-		case 'a':
-			back = !back;
-			break;
-		case '+':
-			zoom++;
-			break;
+void keyboard(unsigned char key, int x_pos, int y_pos)
+{
+    // Handle keyboard input
+    switch(key) {
+    	case 27: // ESC
+    		exit(0);
+    	break;
+    	
+    	case 'p':
+    	case 'P':
+			paused = !paused;
+			if(paused) {
+				glutChangeToMenuEntry(MENU_PAUSE, "Resume Simulation", MENU_PAUSE);
+				std::cout << "Simulation Paused" << std::endl;
+			}
+			
+			else {
+				glutChangeToMenuEntry(MENU_PAUSE, "Pause Simulation", MENU_PAUSE);
+				std::cout << "Simulation Resumed" << std::endl;
+			}
+    	break;
+    	
+    	case 'a':
+    	case 'A':
+    		reversedDirection = !reversedDirection;
+    		
+    		directionText = (reversedDirection) ? "Orbit Direction: Clockwise" : "Orbit Direction: Counter-Clockwise";
+    	break;
+
 		case '-':
-			zoom--;
-			break;
+			zoom -= 1.0f;
+			if(zoom == 0.0f) {
+				zoom -= 1.0f;
+			}
+
+			view = glm::lookAt( glm::vec3(0.0, 8.0, zoom), //eye position
+					glm::vec3(0.0, 0.0, 0.0), //focus point
+					glm::vec3(0.0, 1.0, 0.0)); //positive y is up
+		break;
+
+		case '+':
+			zoom += 1.0f;
+			if(zoom == 0.0f) {
+				zoom += 1.0f;
+			}
+			
+			view = glm::lookAt( glm::vec3(0.0, 8.0, zoom), //eye position
+					glm::vec3(0.0, 0.0, 0.0), //focus point
+					glm::vec3(0.0, 1.0, 0.0)); //positive y is up
+
+		break;
+    }
+}
+
+void keyboardSpecial(int key, int x_pos, int y_pos)
+{
+    switch(key) {
+        case GLUT_KEY_LEFT: // <-
+            reversedDirection = true;
+            directionText = "Orbit Direction: Clockwise";
+        break;
+        
+        case GLUT_KEY_RIGHT: // ->
+            reversedDirection = false;
+            directionText = "Orbit Direction: Counter-Clockwise";
+        break;
+    }
+}
+
+void mouse(int button, int state, int x, int y)
+{
+	switch(button) {
+		case GLUT_LEFT_BUTTON:
+			if(state == GLUT_DOWN) {
+				reversedDirection = !reversedDirection;
+
+				if(reversedDirection)
+					directionText = "Orbit Direction: Clockwise";
+
+				else
+					directionText = "Orbit Direction: Counter-Clockwise";
+			}
+		break;
 	}
 }
 
-// to detect arrow keys
-void specKeyboard(int key, int x, int y) {
-	switch(key) {
-		case GLUT_KEY_LEFT:
-			clockdir = false;
-			break;
-		case GLUT_KEY_RIGHT:
-			clockdir = true;
-			break;
-	}
-}
+bool initialize()
+{                    
+    //ModelLoader ml(modelFile.c_str());
 
-bool shaderLoader(string fvs, string ffs){
-    GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-	std::ifstream is1;
-	std::ifstream is2;
-	int length = 0;
-
-	// load the shaders
-	is1.open(fvs, std::ios::binary);
-	is1.seekg(0, std::ios::end);
-	length = is1.tellg();
-	is1.seekg(0, std::ios::beg);
-	char *ret = new char[length + 1];
-	is1.read(ret, length);
-	ret[length] = '\0';
-	is1.close();
-	const char *vs = ret;
-
-	is2.open(ffs, std::ios::binary);
-	is2.seekg(0, std::ios::end);
-	length = is2.tellg();
-	is2.seekg(0, std::ios::beg);
-	char *ret2 = new char[length+1];
-	is2.read(ret2, length);
-	ret2[length] = '\0';
-	is2.close();
-	const char *fs = ret2;
-
-    GLint shader_status;
-
-	// compile vertex shader
-    glShaderSource(vertex_shader, 1, &vs, NULL);
-    glCompileShader(vertex_shader);
-    glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &shader_status);
-    if(!shader_status) {
-        std::cerr << "[F] FAILED TO COMPILE VERTEX SHADER!" << std::endl;
-        return false;
+	ml.setFileName(modelFile);
+    
+    auto vec = ml.load(triangleCount, textureCount);
+    Vertex *geometry = new Vertex[vec.size()];
+    
+    for(size_t i = 0; i < vec.size(); i++) {
+        geometry[i] = vec[i];
     }
 
-	// compile fragment shader
-    glShaderSource(fragment_shader, 1, &fs, NULL);
-    glCompileShader(fragment_shader);
-    glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &shader_status);
-    if(!shader_status) {
-        std::cerr << "[F] FAILED TO COMPILE FRAGMENT SHADER!" << std::endl;
-        return false;
-    }
-
-	// create the program and attach the shaders
-    program = glCreateProgram();
-    glAttachShader(program, vertex_shader);
-    glAttachShader(program, fragment_shader);
-    glLinkProgram(program);
-    glGetProgramiv(program, GL_LINK_STATUS, &shader_status);
-    if(!shader_status) {
-        std::cerr << "[F] THE SHADER PROGRAM FAILED TO LINK" << std::endl;
-        return false;
-    }
-
-	delete ret;
-	delete ret2;
-	return true;
-}
-
-// more magic
-bool initialize() {
-	std::vector<Vertex> geoTemp;
-	objLoader obj1(objectFile);
-	geoTemp = obj1.loadModel();
-	num = obj1.numTriangles;
-
-	int x = geoTemp.size();
-	Vertex *geometry = new Vertex[x];
-	for(int i=0; i<x; i++) {
-		geometry[i] = geoTemp[i];
-	}
-	GLfloat texcoords[] = {
-	0.0,0.0,
-	1.0,0.0,
-	1.0,1.0,
-	0.0,1.0,
-	};
-
+	std::cout << "Vertex Count: " << vec.size() << std::endl 
+			  << "Model Size: " << sizeof(*geometry) * vec.size() << std::endl;
+    
+    // Create a Vertex Buffer object to store this vertex info on the GPU
     glGenBuffers(1, &vbo_geometry);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_geometry);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(geometry)*x*3, geometry, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(*geometry) * vec.size(), geometry, GL_STATIC_DRAW);
+    
+    //--Geometry done
 
-	if(!shaderLoader(vsFile, fsFile)) {
-		return false;
-	}
+	//textureId = ml.getTexture();
+    //--load shaders
+    if(!vertexShader.load(vertexFile) || !fragmentShader.load(fragmentFile))
+        return false;
 
-    loc_position = glGetAttribLocation(program, const_cast<const char*>("v_position"));
-    if(loc_position == -1) {
+    //Now we link the 2 shader objects into a program
+    //This program is what is run on the GPU
+    program = ShaderLoader::linkShaders({vertexShader, fragmentShader}); 
+
+    //Now we set the locations of the attributes and uniforms
+    //this allows us to access them easily while rendering
+    loc_position = glGetAttribLocation(program,
+                    const_cast<const char*>("v_position"));
+    if(loc_position == -1)
+    {
         std::cerr << "[F] POSITION NOT FOUND" << std::endl;
         return false;
     }
 
-    loc_tex = glGetAttribLocation(program, const_cast<const char*>("v_tex"));
-    if(loc_tex == -1) {
-        std::cerr << "[F] V_TEX NOT FOUND" << std::endl;
+	loc_texCoord = glGetAttribLocation(program,
+					 const_cast<const char*>("v_texCoord"));
+
+	if(loc_texCoord == -1)
+	{
+		std::cerr << "[F] TEXTURE COORD NOT FOUND" << std::endl;
+		return false;
+	}
+
+/*
+    loc_color = glGetAttribLocation(program,
+                    const_cast<const char*>("v_color"));
+    if(loc_color == -1)
+    {
+        std::cerr << "[F] V_COLOR NOT FOUND" << std::endl;
         return false;
     }
-
-    loc_mvpmat = glGetUniformLocation(program, const_cast<const char*>("mvpMatrix"));
-    if(loc_mvpmat == -1) {
+*/
+    loc_mvpmat = glGetUniformLocation(program,
+                    const_cast<const char*>("mvpMatrix"));
+    if(loc_mvpmat == -1)
+    {
         std::cerr << "[F] MVPMATRIX NOT FOUND" << std::endl;
         return false;
     }
 
-    gSampler = glGetUniformLocation(program, "gSampler");
+	loc_texture = glGetUniformLocation(program,
+					const_cast<const char*>("tex"));
 
-    view = glm::lookAt( glm::vec3(0.0, 8.0, -16.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
-    projection = glm::perspective( 45.0f, float(w)/float(h), 0.01f, 100.0f); 
+	if(loc_texture == -1) {
+		std::cerr << "[F] TEXTURE NOT FOUND" << std::endl;
+		return false;
+	}
+    
+    //--Init the view and projection matrices
+    //  if you will be having a moving camera the view matrix will need to more dynamic
+    //  ...Like you should update it before you render more dynamic 
+    //  for this project having them static will be fine
+    view = glm::lookAt( glm::vec3(0.0, 8.0, zoom), //eye position
+                        glm::vec3(0.0, 0.0, 0.0), //focus point
+                        glm::vec3(0.0, 1.0, 0.0)); //positive y is up
 
+    projection = glm::perspective( 45.0f, //the FoV typically 90 degrees is good which is what this is set to
+                                   float(w)/float(h), //Aspect Ratio, so Circles stay Circular
+                                   0.01f, //Distance to the near plane, normally a small value like this
+                                   100.0f); //Distance to the far plane, 
+
+    //enable depth testing
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
-	delete geometry;
+	glEnable(GL_TEXTURE_2D);
+
+	createMenus();
+    //and its done
+	
+	delete[] geometry;
     return true;
 }
 
-// delete things
-void cleanUp() {
+void cleanUp()
+{
+    // Clean up, Clean up
     glDeleteProgram(program);
     glDeleteBuffers(1, &vbo_geometry);
+	//glDeleteTextures(1,&textureId);
+	//for(int i = 0; i < textureCount; i++)
+		//glDeleteTexture(1,&ml.getTexture(i));	
 }
 
-// time things
-float getDT() {
+//returns the time delta
+float getDT()
+{
     float ret;
     t2 = std::chrono::high_resolution_clock::now();
     ret = std::chrono::duration_cast< std::chrono::duration<float> >(t2-t1).count();
     t1 = std::chrono::high_resolution_clock::now();
     return ret;
+}
+
+void createMenus()
+{
+	glutCreateMenu(menuActions);
+	
+	glutAddMenuEntry("Pause Simulation", MENU_PAUSE);
+	glutAddMenuEntry("Reverse Direction", MENU_REVERSE_DIRECTION);
+	glutAddMenuEntry("Reverse Rotation", MENU_REVERSE_ROTATION);
+	glutAddMenuEntry("Exit Program", MENU_EXIT);
+	
+	glutAttachMenu(GLUT_RIGHT_BUTTON);
+}
+
+void menuActions(int option)
+{
+	switch(option) {
+		case MENU_PAUSE:
+			paused = !paused;
+			if(paused) {
+				glutChangeToMenuEntry(MENU_PAUSE, "Resume Simulation", MENU_PAUSE);
+				std::cout << "Simulation Paused" << std::endl;
+			}
+				
+			else {
+				glutChangeToMenuEntry(MENU_PAUSE, "Pause Simulation", MENU_PAUSE);
+				std::cout << "Simulation Resumed" << std::endl;
+			}
+		break;
+		
+		case MENU_REVERSE_DIRECTION:
+			reversedDirection = !reversedDirection;
+		break;
+		
+		case MENU_REVERSE_ROTATION:
+		    reversedRotation = !reversedRotation;
+		break;
+		
+		case MENU_EXIT:
+			exit(0);
+		break;
+	}
+}
+
+void renderText(const char *text)
+{
+	glUseProgram(0);
+    glColor3f(1.0f,1.0,1.0);
+    glRasterPos2f(-0.25f,-0.85f);
+    
+#ifndef __APPLE__ // this function does not work on Mac... problems with freeglut
+    glutBitmapString(GLUT_BITMAP_HELVETICA_18, (const unsigned char*)text);
+#else // apple
+	std::string textStr = text;
+
+	for(char c : textStr) {
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, int(c));
+	}
+#endif
+
+    glUseProgram(program);
 }

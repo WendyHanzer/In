@@ -1,16 +1,30 @@
-# Linux
+
+OS := $(shell uname)
+
+ifeq ($(OS), Linux)
 CC=g++
+LIBS= -lglut -lGLEW -lGL -lassimp -lfreeimageplus
+CXXFLAGS= -g -Wall -std=c++0x
+RM= 
 
-# For Macs uncomment the next line and comment out the previous one
-#CC=clang++
-# Assuming you want to use a recent compiler
+else #Mac
+CC=clang++
+LIBS=  -framework OpenGL -framework GLUT -framework Cocoa -lGLEW -lassimp -lfreeimageplus
+CXXFLAGS= -g -Wall -std=c++11 -stdlib=libc++
+RM= ../bin/Matrix.dSYM
+endif
 
-# Compiler flags
-LIBS= -lglut -lGLEW -lGL -lassimp -lMagick++
-CXXFLAGS= -g -I/usr/include/ImageMagick -Wall -std=c++0x 
+OBJ= shaderloader.o modelloader.o
 
 all: ../bin/Matrix
 
-../bin/Matrix: ../src/main.o ../src/modelLoader.o ../src/texLoader.o
-	$(CC) $(CXXFLAGS) ../src/main.o ../src/modelLoader.o ../src/texLoader.o -o ../bin/Matrix $(LIBS)
+../bin/Matrix: ../src/main.cpp $(OBJ)
+	$(CC) $(CXXFLAGS) $(DEFS) ../src/main.cpp -o ../bin/Matrix $(OBJ) $(LIBS)
 
+shaderloader.o: ../src/shaderloader.h ../src/shaderloader.cpp
+	$(CC) $(CXXFLAGS) $(DEFS) -c ../src/shaderloader.cpp
+
+modelloader.o: ../src/modelloader.h ../src/modelloader.cpp
+	$(CC) $(CXXFLAGS) $(DEFS) -c ../src/modelloader.cpp
+clean:
+	rm -rf *.o ../bin/Matrix $(RM)
