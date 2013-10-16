@@ -1,6 +1,6 @@
 Assignment07 -- Texture Loading
 ===============================
-Jakub Berlinski is my partner for this project.
+Cameron Rowe is my partner for this project.
 
 Texture loading complete. Model will load if texture file is stated in object file or .mtl file.
 
