@@ -46,7 +46,7 @@ void Engine::init(int argc, char **argv)
 	glDepthFunc(GL_LESS);
 	glEnable(GL_TEXTURE_2D);
 	
-	view = glm::lookAt(glm::vec3(0.0,8.0,zoom),
+	view = glm::lookAt(glm::vec3(-4.0,10.0,-9.0),
 					   glm::vec3(0.0,0.0,0.0),
 					   glm::vec3(0.0,1.0,0.0));
 
@@ -68,8 +68,8 @@ void Engine::init(int argc, char **argv)
     //This program is what is run on the GPU
     program = ShaderLoader::linkShaders({vertexShader, fragmentShader}); 
 
-	objects.push_back(new SimObject(program, 0, "colorCube.obj", btVector3(0,1,0)));
-	objects.push_back(new SimObject(program, 1, "sphere.obj", btVector3(3,5,0)));
+	objects.push_back(new SimObject(program, 0, "hockeytable2.obj", btVector3(0,1,0)));
+	objects.push_back(new SimObject(program, 1, "puck.obj", btVector3(0,5,0)));
 	objects.push_back(new SimObject(program, 1, "cylinder.obj", btVector3(-3,15,0)));
 	//objects.push_back(new SimObject(program, "table.obj", btVector3(1,3,0)));
 	
@@ -78,6 +78,15 @@ void Engine::init(int argc, char **argv)
 	}
 	
 	initialized = true;
+
+}
+
+void myMouseFunc(int x, int y)
+{
+std::cout << x << " " << y;
+//mouse_x = x; place current mouse pos in mouse_x
+//mouse_y = y;
+
 }
 
 int Engine::run()
@@ -86,6 +95,7 @@ int Engine::run()
 		throw std::runtime_error("Engine::init() must be called first!");
 
 	t1 = std::chrono::high_resolution_clock::now();
+	//glutMouseFunc(int button, int state, int x,int y);
 	glutMainLoop();
 
 	cleanUp();
@@ -219,8 +229,8 @@ void Engine::initPhysics()
 {
 	simulation->setGravity(btVector3(0,-10,0));
 	btCollisionShape* groundShape = new btStaticPlaneShape(btVector3(0,1,0),1);
-	btCollisionShape* shape1 = new btBoxShape(btVector3(1,1,1));
-	btCollisionShape* shape2 = new btBoxShape(btVector3(1,1,1));
+	//btCollisionShape* shape1 = new btBoxShape(btVector3(1,1,1));
+	//btCollisionShape* shape2 = new btBoxShape(btVector3(1,1,1));
 
 	btDefaultMotionState* groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(0,-1,0)));
 

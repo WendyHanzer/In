@@ -80,8 +80,13 @@ SimObject::SimObject(GLuint program, btScalar mass, std::string modelFile, btVec
 						  btVector3(geometry[i+2].position[0], geometry[i+2].position[1], geometry[i+2].position[2]));
 						  
 	}
-	
-	btCollisionShape * shape = new btConvexTriangleMeshShape(mesh);
+	btCollisionShape * shape;
+	if(mass == 0) {
+	  shape  = new btBvhTriangleMeshShape(mesh, true);
+	}
+	else {
+	  shape = new btConvexTriangleMeshShape(mesh);
+	}
 	
 	btDefaultMotionState* fallMotionState = new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), vec));
 	btVector3 fallInertia(0,0,0);
