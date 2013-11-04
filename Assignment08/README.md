@@ -1,8 +1,17 @@
-Straightforward project. There were no issues just had to figure out how to access the faces and vertices.
+Assignment08 -- Bullet
+======================
+Cameron Rowe is my partner for this project.
 
-Add objects through cmd prompt: ./Matrix object.obj
-Controls:
-a/LMB - reverse rotation
-RMB - menu
-+ - scale model bigger
-- - scale model smaller
+Arbitrary objects are able to be loaded and a physics mesh will be created to match that object.
+
+### Compilation Notes ###
+libfreeimage-dev, libbullet-dev, and libassimp-dev are required to compile this project.
+
+### Problems ###
+Could not create table with walls. A weird invisible wall appeared on top of the object.
+
+## Interaction Options ##
+Keyboard Options:
+
+* W,A,S,D -- Moves the sphere acordingly.
+* space -- Causes the sphere to "jump".
