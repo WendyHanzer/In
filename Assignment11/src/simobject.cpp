@@ -145,19 +145,19 @@ void SimObject::render(bool ambient, bool specular, bool diffuse)
 
 
     if(ambient)
-        glUniform4f(loc_ambient, lighting.color[0], lighting.color[1], lighting.color[2], 0.0f);
+        glUniform4f(loc_ambient, 1.0f, 1.0f, 1.0f, 0.0f);
 
     else
         glUniform4f(loc_ambient, 0.0f, 0.0f, 0.0f, 0.0f);
 
     if(diffuse)
-        glUniform4f(loc_diffuse, lighting.color[3], lighting.color[4], lighting.color[5], 0.0f);
+        glUniform4f(loc_diffuse, 1.0f, 1.0f, 1.0f, 0.0f);
 
     else
         glUniform4f(loc_diffuse, 0.0f, 0.0f, 0.0f, 0.0f);
 
     if(specular)
-        glUniform4f(loc_specular, lighting.color[6], lighting.color[7], lighting.color[8], 0.0f);
+        glUniform4f(loc_specular, 1.0f, 1.0f, 1.0f, 0.0f);
 
     else
         glUniform4f(loc_specular, 0.0f, 0.0f, 0.0f, 0.0f);
@@ -165,7 +165,7 @@ void SimObject::render(bool ambient, bool specular, bool diffuse)
     glUniform1f(loc_shininess, lighting.shininess);
     glUniform1i(loc_hasTexture, textureCount);
 
-    glUniform4f(loc_lightPos, 0.0f, 5.0f, -10.0f, 0.0f);
+    glUniform4f(loc_lightPos, 0.0f, 3.0f, 0.0f, 0.0f);
 
 	for(int i = 0; i < textureCount; i++) {
 		glUniform1i(loc_texture,i);

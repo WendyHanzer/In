@@ -36,7 +36,7 @@ void Engine::init(int argc, char **argv)
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH | GLUT_RGBA);
 	glutInitWindowSize(width,height);
-	glutCreateWindow("Lighting");
+	glutCreateWindow("Labyrinth");
 
 	glutDisplayFunc(render);
 	glutReshapeFunc(reshape);
@@ -146,10 +146,10 @@ void Engine::render()
 
     std::string text = specular ? "Specular: On" : "Specular: Off";
     renderText(text.c_str(), glm::vec2(-0.95,0.85));
-    
+
     text = ambient ? "Ambient: On" : "Ambient: Off";
     renderText(text.c_str(), glm::vec2(-0.95,0.78));
-    
+
     text = diffuse ? "Diffuse: On" : "Diffuse: Off";
     renderText(text.c_str(), glm::vec2(-0.95,0.71));
 	glutSwapBuffers();
@@ -189,18 +189,18 @@ void Engine::reshape(int new_width, int new_height)
 void Engine::keyboard(unsigned char key, int x_pos, int y_pos)
 {
     keyStates[int(key)] = true;
-    
+
     switch(key) {
         case 'a':
         case 'A':
             ambient = !ambient;
         break;
-        
+
         case 's':
         case 'S':
             specular = !specular;
         break;
-        
+
         case 'd':
         case 'D':
             diffuse = !diffuse;
@@ -215,7 +215,7 @@ void Engine::keyboardSpecial(int key, int x_pos, int y_pos)
 
 void Engine::keyboardUp(unsigned char key, int x_pos, int y_pos)
 {
-    keyStates[key] = false;
+    keyStates[int(key)] = false;
 }
 
 void Engine::keyboardSpecialUp(int key, int x_pos, int y_pos)
@@ -240,23 +240,23 @@ void Engine::keyboardHandle()
 	if(keyStates[int('s')]) {
 	    specular = !specular;
 	}
-	
+
 	if(keyStates[int('d')]) {
 	    diffuse = !diffuse;
     }
-*/    
+*/
     if(keyStatesSpecial[GLUT_KEY_RIGHT]) {
-        objects[1]->getMesh()->setAngularVelocity(btVector3(0,8,0));
+        objects[1]->getMesh()->setAngularVelocity(btVector3(0,0,8));
     }
 
     if(keyStatesSpecial[GLUT_KEY_LEFT]) {
-        objects[1]->getMesh()->setAngularVelocity(btVector3(0,-8,0));
+        objects[1]->getMesh()->setAngularVelocity(btVector3(0,0,-8));
     }
-    
+
     if(keyStatesSpecial[GLUT_KEY_UP]) {
         objects[1]->getMesh()->setAngularVelocity(btVector3(8,0,0));
     }
-    
+
     if(keyStatesSpecial[GLUT_KEY_DOWN]) {
         objects[1]->getMesh()->setAngularVelocity(btVector3(-8,0,0));
     }

@@ -65,9 +65,9 @@ std::vector<Vertex> ModelLoader::load(int& numTriangles, int& numTextures, Verte
 			light.color[1] = tempVert.color[1] = color.g;
 			light.color[2] = tempVert.color[2] = color.b;
 			material->Get(AI_MATKEY_COLOR_DIFFUSE, color);
-			light.color[3] = tempVert.color[3] = color.r;
-			light.color[4] = tempVert.color[4] = color.g;
-			light.color[5] = tempVert.color[5] = color.b;
+			light.color[3] = tempVert.color[0] = color.r;
+			light.color[4] = tempVert.color[1] = color.g;
+			light.color[5] = tempVert.color[2] = color.b;
 			material->Get(AI_MATKEY_COLOR_SPECULAR, color);
 			light.color[6] = tempVert.color[6] = color.r;
 			light.color[7] = tempVert.color[7] = color.g;

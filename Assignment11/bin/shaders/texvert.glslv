@@ -25,14 +25,17 @@ void main(void) {
     vec4 specularValue = ks * specular;
 
     if(dot(L,N) < 0.0) {
-        specularValue = vec4(1.0,1.0,1.0,0.0);
+        specularValue = vec4(0.0,0.0,0.0,0.0);
     }
 
 	tex_coords = v_texCoord;
 
 	//vec3 ignore = v_color;
+    vec4 ambientValue = ambient * 0.1;
+    diffuseValue *= 0.5;
+    specularValue *= 0.5;
 
-    color = (ambient + diffuseValue + specularValue) + vec4(v_color, 1.0);
+    color = ambientValue + diffuseValue + specularValue + vec4(v_color, 1.0);
 
     gl_Position = mvpMatrix * vec4(v_position, 1.0);
 }
