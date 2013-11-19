@@ -35,7 +35,13 @@ void main(void) {
     diffuseValue *= 0.5;
     specularValue *= 0.5;
 
-    color = ambientValue + diffuseValue + specularValue + vec4(v_color, 1.0);
+	if(hasTexture) {
+		color = ambientValue + diffuseValue + specularValue;
+	}
+
+	else {
+    	color = ambientValue + diffuseValue + specularValue + vec4(v_color, 1.0);
+	}
 
     gl_Position = mvpMatrix * vec4(v_position, 1.0);
 }
