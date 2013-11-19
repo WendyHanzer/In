@@ -8,6 +8,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <btBulletDynamicsCommon.h>
+#include <BulletCollision/Gimpact/btGImpactShape.h>
 
 #include <string>
 #include <stdexcept>
@@ -28,6 +29,7 @@ public:
 
 	virtual btRigidBody* getMesh() const;
 	virtual void setModel(glm::mat4 newModel);
+	virtual btVector3 getPosition() const;
 
 protected:
 	GLint loc_mvp;
@@ -37,8 +39,8 @@ protected:
 	GLint loc_hasTexture;
 	GLint loc_color;
 	GLint loc_normals;
-	GLint loc_ambient, loc_diffuse, loc_specular;
-	GLint loc_lightPos, loc_shininess;
+	// GLint loc_ambient, loc_diffuse, loc_specular;
+	// GLint loc_lightPos, loc_shininess;
 
 	GLuint vbo;
 	int triangleCount, textureCount;

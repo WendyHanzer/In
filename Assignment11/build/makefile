@@ -16,7 +16,7 @@ INC= -I/usr/local/include/bullet -I/usr/local/include/
 RM= ../bin/lab.dSYM
 endif
 
-OBJ= shaderloader.o engine.o simobject.o modelloader.o
+OBJ= shaderloader.o engine.o simobject.o modelloader.o light.o
 
 all: ../bin/lab
 
@@ -34,6 +34,9 @@ shaderloader.o: ../src/shaderloader.h ../src/shaderloader.cpp
 
 modelloader.o: ../src/modelloader.h ../src/modelloader.cpp
 	$(CC) $(CXXFLAGS) $(DEFS) $(INC) -c ../src/modelloader.cpp
+
+light.o: ../src/light.h ../src/light.cpp
+	$(CC) $(CXXFLAGS) $(DEFS) $(INC) -c ../src/light.cpp
 
 clean:
 	rm -rf *.o ../bin/lab $(RM)

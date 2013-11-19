@@ -18,15 +18,16 @@ ShaderLoader Engine::vertexShader(GL_VERTEX_SHADER),
 bool Engine::paused = false, Engine::initialized = false;
 bool Engine::ambient = true, Engine::specular = true, Engine::diffuse = true;
 //std::string Engine::modelFile("cube.obj");
-std::string Engine::vertexFile("shaders/texvert.glslv"),
-			Engine::fragmentFile("shaders/texfrag.glslf");
-float Engine::zoom = -20.0f;
+std::string Engine::vertexFile("shaders/vert.vs"),
+			Engine::fragmentFile("shaders/frag.fs");
+float Engine::zoom = -5.0f;
 std::chrono::time_point<std::chrono::high_resolution_clock> Engine::t1, Engine::t2;
 std::vector<SimObject*> Engine::objects;
 glm::mat4 Engine::view;
 glm::mat4 Engine::projection;
 GLuint Engine::program;
 bool Engine::keyStates[256], Engine::keyStatesSpecial[256];
+std::vector<Light*> Engine::lights;
 
 btDiscreteDynamicsWorld* Engine::simulation = nullptr;
 btRigidBody *Engine::body1 = nullptr, *Engine::body2 = nullptr;
@@ -61,18 +62,12 @@ void Engine::init(int argc, char **argv)
 	glDepthFunc(GL_LESS);
 	glEnable(GL_TEXTURE_2D);
 
-	view = glm::lookAt(glm::vec3(0.0,2,zoom),
+	view = glm::lookAt(glm::vec3(0.0,5,zoom),
 					   glm::vec3(0.0,0.0,0.0),
 					   glm::vec3(0.0,1.0,0.0));
 
 	projection = glm::perspective(45.0f, float(width)/float(height), 0.01f, 100.0f);
 
-	btBroadphaseInterface *broadphase = new btDbvtBroadphase();
-	btDefaultCollisionConfiguration* collisionConfig = new btDefaultCollisionConfiguration();
-	btCollisionDispatcher *dispatcher = new btCollisionDispatcher(collisionConfig);
-	btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver();
-
-	simulation = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfig);
 	initPhysics();
 
     //--load shaders
@@ -83,8 +78,8 @@ void Engine::init(int argc, char **argv)
     //This program is what is run on the GPU
     program = ShaderLoader::linkShaders({vertexShader, fragmentShader});
 
-    objects.push_back(new SimObject(program, 0, "ground.obj", btVector3(0,0,0)));
-	objects.push_back(new SimObject(program, 1, "basicCube.obj", btVector3(0,5,0)));
+    objects.push_back(new SimObject(program, 0, "board.obj", btVector3(0,0,0)));
+	objects.push_back(new SimObject(program, 1, "ball.obj", btVector3(0,5,0)));
 
 	objects[0]->rotate(45.0f, btVector3(0,1,0));
 
@@ -92,6 +87,7 @@ void Engine::init(int argc, char **argv)
 		simulation->addRigidBody(object->getMesh());
 	}
 
+	lights.push_back(new Light(program, glm::vec3(0,5,0)));
 	initialized = true;
 }
 
@@ -111,6 +107,10 @@ void Engine::cleanUp()
 {
 	for(SimObject* object : objects) {
 		delete object;
+	}
+
+	for(Light *light : lights) {
+		delete light;
 	}
 }
 
@@ -142,6 +142,10 @@ void Engine::render()
 		object->render(ambient, specular, diffuse);
 	}
 
+	for(Light *light : lights) {
+		light->render(ambient, specular, diffuse);
+	}
+
     glUseProgram(0);
 
     std::string text = specular ? "Specular: On" : "Specular: Off";
@@ -170,6 +174,10 @@ void Engine::update()
 
 	for(SimObject *object : objects) {
 		object->update();
+	}
+
+	for(Light *light : lights) {
+		light->update();
 	}
 
 	glutPostRedisplay();
@@ -269,14 +277,21 @@ void Engine::mouse(int button, int state, int x_pos, int y_pos)
 
 void Engine::initPhysics()
 {
+	btBroadphaseInterface *broadphase = new btDbvtBroadphase();
+	btDefaultCollisionConfiguration* collisionConfig = new btDefaultCollisionConfiguration();
+	btCollisionDispatcher *dispatcher = new btCollisionDispatcher(collisionConfig);
+	btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver();
+	simulation = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfig);
+
 	simulation->setGravity(btVector3(0,-10,0));
 	btCollisionShape* groundShape = new btStaticPlaneShape(btVector3(0,1,0),1);
-    btCollisionShape* shape1 = new btBoxShape(btVector3(0.1,10,10));
 	btDefaultMotionState* groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(0,-1,0)));
 
 	btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(0,groundMotionState,groundShape,btVector3(0,0,0));
 	btRigidBody* groundRigidBody = new btRigidBody(groundRigidBodyCI);
 	simulation->addRigidBody(groundRigidBody);
+
+	btGImpactCollisionAlgorithm::registerAlgorithm(dispatcher);
 /*
 	btDefaultMotionState* fallMotionState = new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(0,10.9,0)));
 	btScalar mass = 0;

@@ -17,10 +17,12 @@
 #include <glm/glm.hpp>
 
 #include <btBulletDynamicsCommon.h>
+#include <BulletCollision/Gimpact/btGImpactCollisionAlgorithm.h>
 
 #include "shaderloader.h"
 //#include "modelloader.h"
 #include "simobject.h"
+#include "light.h"
 
 class Engine
 {
@@ -78,6 +80,8 @@ private:
 	static glm::mat4 projection;
 	static bool keyStates[256];
 	static bool keyStatesSpecial[256];
+
+	static std::vector<Light*> lights;
 	
     //static int camera;
     //static float dAngle;

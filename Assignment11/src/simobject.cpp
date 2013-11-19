@@ -20,29 +20,29 @@ SimObject::SimObject(GLuint program, btScalar mass, std::string modelFile, btVec
 	loc_hasTexture = glGetUniformLocation(program, "hasTexture");
 	loc_color = glGetAttribLocation(program, "v_color");
 	loc_normals = glGetAttribLocation(program, "v_normal");
-	loc_ambient = glGetUniformLocation(program, "ambient");
+	/*loc_ambient = glGetUniformLocation(program, "ambient");
 	loc_diffuse = glGetUniformLocation(program, "diffuse");
 	loc_specular = glGetUniformLocation(program, "specular");
 	loc_lightPos = glGetUniformLocation(program, "lightPosition");
-	loc_shininess = glGetUniformLocation(program, "shininess");
+	loc_shininess = glGetUniformLocation(program, "shininess");*/
 
 	if(loc_mvp == -1 || loc_position == -1 ||
 		loc_texture == -1 || loc_texCoord == -1
 		    || loc_hasTexture == -1 || loc_color == -1
-		        || loc_ambient == -1 || loc_diffuse == -1
+		        || /*loc_ambient == -1 || loc_diffuse == -1
 		            || loc_specular == -1 || loc_lightPos == -1
-		                || loc_shininess == -1 || loc_normals == -1) {
+		                || loc_shininess == -1 ||*/ loc_normals == -1) {
 		                    std::cerr << loc_mvp << "\n"
 		                              << loc_position << "\n"
 		                              << loc_texture << "\n"
 		                              << loc_texCoord << "\n"
 		                              << loc_hasTexture << "\n"
 		                              << loc_color << "\n"
-		                              << loc_ambient << "\n"
-		                              << loc_diffuse << "\n"
-		                              << loc_specular << "\n"
-		                              << loc_lightPos << "\n"
-		                              << loc_shininess << "\n"
+		                              // << loc_ambient << "\n"
+		                              // << loc_diffuse << "\n"
+		                              // << loc_specular << "\n"
+		                              // << loc_lightPos << "\n"
+		                              // << loc_shininess << "\n"
 		                              << loc_normals << std::endl;
 			                throw std::runtime_error("Unable to get locations in SimObject::SimObject()");
 		}
@@ -55,13 +55,17 @@ SimObject::SimObject(GLuint program, btScalar mass, std::string modelFile, btVec
 
 	}
 
-	btCollisionShape * shape;
-	if(mass > 0) {
-		shape = new btConvexTriangleMeshShape(mesh);
-	}
-	else {
-		shape = new btBvhTriangleMeshShape(mesh,true);
-	}
+	btGImpactMeshShape * shape;
+	// if(mass > 0) {
+	// 	shape = new btGImpactMeshShape(mesh);
+	// }
+	// else {
+	// 	shape = new btGImpactMeshShape(mesh);
+	// }
+
+	shape = new btGImpactMeshShape(mesh);
+	shape->setLocalScaling(btVector3(1.0,1.0,1.0));
+	shape->updateBound();
 
 	btDefaultMotionState* fallMotionState = new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), vec));
 	btVector3 fallInertia(0,0,0);
@@ -144,7 +148,7 @@ void SimObject::render(bool ambient, bool specular, bool diffuse)
     					   (void*)offsetof(Vertex,color));
 
 
-    if(ambient)
+/*    if(ambient)
         glUniform4f(loc_ambient, 1.0f, 1.0f, 1.0f, 0.0f);
 
     else
@@ -162,10 +166,10 @@ void SimObject::render(bool ambient, bool specular, bool diffuse)
     else
         glUniform4f(loc_specular, 0.0f, 0.0f, 0.0f, 0.0f);
 
-    glUniform1f(loc_shininess, lighting.shininess);
+    glUniform1f(loc_shininess, lighting.shininess);*/
     glUniform1i(loc_hasTexture, textureCount);
 
-    glUniform4f(loc_lightPos, 0.0f, 3.0f, 0.0f, 0.0f);
+    //glUniform4f(loc_lightPos, 0.0f, 3.0f, 0.0f, 0.0f);
 
 	for(int i = 0; i < textureCount; i++) {
 		glUniform1i(loc_texture,i);
@@ -210,4 +214,11 @@ btRigidBody* SimObject::getMesh() const
 void SimObject::setModel(glm::mat4 newModel)
 {
 	model = newModel;
+}
+
+btVector3 SimObject::getPosition() const
+{
+	btTransform trans;
+	meshBody->getMotionState()->getWorldTransform(trans);
+	return trans.getOrigin();
 }
