@@ -75,4 +75,7 @@ void Light::update()
 	auto objectPosition = trackingObject->getPosition();
 
 	// do something with position for spotlight
+	position[0] = objectPosition.x();
+	position[1] = objectPosition.y()+1;
+	position[2] = objectPosition.z();
 }
