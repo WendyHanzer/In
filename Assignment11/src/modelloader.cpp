@@ -157,7 +157,7 @@ void ModelLoader::loadTexture(const char *fileName)
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.getWidth(), image.getHeight(),
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.getWidth(), image.getHeight(),
 			0, GL_RGBA, GL_UNSIGNED_BYTE, (void*) image.accessPixels());
 		textures.push_back(texId);
 	}

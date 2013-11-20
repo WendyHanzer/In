@@ -89,7 +89,7 @@ void Engine::init(int argc, char **argv)
 
 	lights.push_back(new Light(program, glm::vec3(0,5,0)));
 
-	lights[0]->enableTracking(objects[1]);
+	//lights[0]->enableTracking(objects[1]);
 	initialized = true;
 }
 
