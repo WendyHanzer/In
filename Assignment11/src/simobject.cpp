@@ -75,11 +75,12 @@ SimObject::SimObject(GLuint program, btScalar mass, std::string modelFile, btVec
 	shape->calculateLocalInertia(mass, fallInertia);
 	btRigidBody::btRigidBodyConstructionInfo shape1CI(mass,fallMotionState,shape,fallInertia);
 	shape1CI.m_friction = 0.5;
-	shape1CI.m_restitution = 0.7;
+	shape1CI.m_restitution = 0.0;
 
 	meshBody = new btRigidBody(shape1CI);
 	meshBody->setActivationState(DISABLE_DEACTIVATION);
-	meshBody->setAngularVelocity(btVector3(0,8,0));
+
+	//meshBody->setAngularVelocity(btVector3(0,8,0));
 }
 
 SimObject::~SimObject()

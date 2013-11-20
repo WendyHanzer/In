@@ -11,9 +11,9 @@ uniform vec4 lightPosition;
 uniform float shininess;
 
 void main(void) {
-    vec3 pos = (mvpMatrix * vec4(v_position,1.0)).xyz;
+    vec3 pos = (mvpMatrix * vec4(v_position,0.0)).xyz;
 
-    vec3 L = normalize(lightPosition.xyz - pos);
+    vec3 L = normalize(lightPosition.xyz - pos); // http://www.cse.unr.edu/~fredh/class/480/text-icg-6ed/Chap%206-1.pptx
     vec3 E = normalize(-pos);
     vec3 H = normalize(L + E);
     vec3 N = normalize(mvpMatrix * vec4(v_normal, 0.0)).xyz;

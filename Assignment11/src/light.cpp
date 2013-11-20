@@ -78,4 +78,6 @@ void Light::update()
 	position[0] = objectPosition.x();
 	position[1] = objectPosition.y()+1;
 	position[2] = objectPosition.z();
+
+	//std::cout << "New Position: " << position[0] << ' ' << position[1] << ' ' << position[2] << std::endl;
 }

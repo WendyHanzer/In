@@ -39,7 +39,7 @@ public:
 	static void update();
 	static void score(int x);
 	static void reshape(int new_width, int new_height);
-	
+
 	static void keyboard(unsigned char key, int x_pos, int y_pos);
 	static void keyboardSpecial(int key, int x_pos, int y_pos);
 	static void keyboardUp(unsigned char key, int x_pos, int y_pos);
@@ -47,13 +47,13 @@ public:
 	//static void changeCamera(int x);
 	static void keyboardHandle();
 	static void mouse(int button, int state, int x_pos, int y_pos);
-	
+	static void mouseMovement(int x_pos, int y_pos);
 	static void createMenus();
 	static void menuActions(int option);
-	
-	static void renderText(const char *text, glm::vec2 pos = glm::vec2(-0.25f,-0.85f), 
+
+	static void renderText(const char *text, glm::vec2 pos = glm::vec2(-0.25f,-0.85f),
 	    glm::vec3 color = glm::vec3(1.0f,1.0f,1.0f));
-	    
+
     //static void resetGame();
 
 private:
@@ -72,7 +72,7 @@ private:
 	static std::string scoreText;
 	static int triangleCount;
 	static float zoom;
-	static int textureCount;	
+	static int textureCount;
 	static std::chrono::time_point<std::chrono::high_resolution_clock> t1, t2;
 	static GLuint program;
 	static std::vector<SimObject*> objects;
@@ -80,9 +80,11 @@ private:
 	static glm::mat4 projection;
 	static bool keyStates[256];
 	static bool keyStatesSpecial[256];
+	static bool rightClick, leftClick;
+	static float mouseX, mouseY, posX, posY, posZ;
 
 	static std::vector<Light*> lights;
-	
+
     //static int camera;
     //static float dAngle;
     //static int xOrigin;

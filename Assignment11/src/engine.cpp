@@ -20,16 +20,16 @@ bool Engine::ambient = true, Engine::specular = true, Engine::diffuse = true;
 //std::string Engine::modelFile("cube.obj");
 std::string Engine::vertexFile("shaders/vert.vs"),
 			Engine::fragmentFile("shaders/frag.fs");
-float Engine::zoom = -5.0f;
+float Engine::zoom = -10.0f;
 std::chrono::time_point<std::chrono::high_resolution_clock> Engine::t1, Engine::t2;
 std::vector<SimObject*> Engine::objects;
 glm::mat4 Engine::view;
 glm::mat4 Engine::projection;
 GLuint Engine::program;
 bool Engine::keyStates[256], Engine::keyStatesSpecial[256];
+bool Engine::rightClick = false, Engine::leftClick = false;
+float Engine::mouseX, Engine::mouseY, Engine::posX = 0, Engine::posY = 5, Engine::posZ = -5;
 std::vector<Light*> Engine::lights;
-float posX = 0.0, posZ = -5.0f , mouseX, mouseY;
-int onClick = -1;
 
 btDiscreteDynamicsWorld* Engine::simulation = nullptr;
 btRigidBody *Engine::body1 = nullptr, *Engine::body2 = nullptr;
@@ -49,6 +49,7 @@ void Engine::init(int argc, char **argv)
 	glutSpecialFunc(keyboardSpecial);
 	glutSpecialUpFunc(keyboardSpecialUp);
 	glutMouseFunc(mouse);
+	glutMotionFunc(mouseMovement);
 
 	//createMenus();
 
@@ -80,10 +81,11 @@ void Engine::init(int argc, char **argv)
     //This program is what is run on the GPU
     program = ShaderLoader::linkShaders({vertexShader, fragmentShader});
 
-    objects.push_back(new SimObject(program, 0, "board.obj", btVector3(0,0,0)));
-	objects.push_back(new SimObject(program, 1, "ball.obj", btVector3(0,5,0)));
+    objects.push_back(new SimObject(program, 1, "board.obj", btVector3(0,0,0)));
+	objects.push_back(new SimObject(program, 1, "ball.obj", btVector3(0,2,0)));
 
-	objects[0]->rotate(45.0f, btVector3(0,1,0));
+	objects[0]->getMesh()->setCollisionFlags(btCollisionObject::CF_KINEMATIC_OBJECT);
+
 
 	for(SimObject *object : objects) {
 		simulation->addRigidBody(object->getMesh());
@@ -91,7 +93,7 @@ void Engine::init(int argc, char **argv)
 
 	lights.push_back(new Light(program, glm::vec3(0,5,0)));
 
-	//lights[0]->enableTracking(objects[1]);
+	lights[0]->enableTracking(objects[1]);
 	initialized = true;
 }
 
@@ -237,6 +239,7 @@ void Engine::keyboardSpecialUp(int key, int x_pos, int y_pos)
 
 void Engine::keyboardHandle()
 {
+	static float angle = 0.0, angle2 = 0.0;
     if(keyStates[ESC]) {
 	#ifndef __APPLE__
 	    glutLeaveMainLoop();
@@ -258,41 +261,74 @@ void Engine::keyboardHandle()
     }
 */
     if(keyStatesSpecial[GLUT_KEY_RIGHT]) {
-        objects[1]->getMesh()->setAngularVelocity(btVector3(0,0,8));
+    	angle += 0.01;
+
     }
 
     if(keyStatesSpecial[GLUT_KEY_LEFT]) {
-        objects[1]->getMesh()->setAngularVelocity(btVector3(0,0,-8));
+        angle -= 0.01;
+
     }
 
     if(keyStatesSpecial[GLUT_KEY_UP]) {
-        objects[1]->getMesh()->setAngularVelocity(btVector3(8,0,0));
+    	angle2 += 0.01;
+
     }
 
     if(keyStatesSpecial[GLUT_KEY_DOWN]) {
-        objects[1]->getMesh()->setAngularVelocity(btVector3(-8,0,0));
+    	angle2 -= 0.01;
+
     }
+
+        btTransform trans;
+        objects[0]->getMesh()->getMotionState()->getWorldTransform(trans);
+        auto rotation = trans.getRotation();
+        rotation += btQuaternion(btVector3(0,0,1), angle) + btQuaternion(btVector3(1,0,0), angle2);
+        trans.setRotation(rotation);
+        objects[0]->getMesh()->getMotionState()->setWorldTransform(trans);
 }
 
 void Engine::mouse(int button, int state, int x_pos, int y_pos)
 {
-	//if(button == GLUT_RIGHT_BUTTON) {
-		if(x_pos > mouseX)
-			posX += 0.2f;
+	if(button == GLUT_RIGHT_BUTTON) {
+		if(state == GLUT_UP)
+			rightClick = false;
+
 		else
-			posX -= 0.2f;
-		if(y_pos > mouseY)
-			posZ += 0.2f;
+			rightClick = true;
+	}
+
+	if(button == GLUT_LEFT_BUTTON) {
+		if(state == GLUT_UP)
+			leftClick = true;
+
 		else
-			posZ -= 0.2f;
+			leftClick = false;
+	}
+
+}
+
+void Engine::mouseMovement(int x_pos, int y_pos)
+{
+	if(rightClick) {
+		if (x_pos > mouseX)
+			posX += 0.1f;
+		else
+			posX -= 0.1f;
+
+		if (y_pos > mouseY)
+			posY += 0.1f;
+		else
+			posY -= 0.1f;
 
 		mouseX = x_pos;
-		mouseY = y_pos;		
-	//}
-	view = glm::lookAt(glm::vec3(posX,5,posZ),
-					   glm::vec3(0.0,0.0,0.0),
-					   glm::vec3(0.0,1.0,0.0));
+		mouseY = y_pos;
 
+		view = glm::lookAt(glm::vec3(posX,posY,posZ),
+						   glm::vec3(0,0,0),
+						   glm::vec3(0,1,0));
+
+	}
 }
 
 void Engine::initPhysics()
@@ -304,12 +340,12 @@ void Engine::initPhysics()
 	simulation = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfig);
 
 	simulation->setGravity(btVector3(0,-10,0));
-	btCollisionShape* groundShape = new btStaticPlaneShape(btVector3(0,1,0),1);
-	btDefaultMotionState* groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(0,-1,0)));
+	//btCollisionShape* groundShape = new btStaticPlaneShape(btVector3(0,1,0),1);
+	//btDefaultMotionState* groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(0,-1,0)));
 
-	btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(0,groundMotionState,groundShape,btVector3(0,0,0));
-	btRigidBody* groundRigidBody = new btRigidBody(groundRigidBodyCI);
-	simulation->addRigidBody(groundRigidBody);
+	//btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(0,groundMotionState,groundShape,btVector3(0,0,0));
+	//btRigidBody* groundRigidBody = new btRigidBody(groundRigidBodyCI);
+	//simulation->addRigidBody(groundRigidBody);
 
 	btGImpactCollisionAlgorithm::registerAlgorithm(dispatcher);
 /*
