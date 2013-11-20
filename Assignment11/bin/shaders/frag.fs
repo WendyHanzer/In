@@ -6,7 +6,7 @@ varying vec4 color;
 void main(void) {
 
     if(hasTexture) {
-        gl_FragColor = vec4(color.rgb * vec3(texture2D(tex,tex_coords.xy)), 1.0);
+        gl_FragColor = vec4(vec3(texture2D(tex,tex_coords.xy)), 1.0);
     }
     
     else {
