@@ -28,6 +28,8 @@ glm::mat4 Engine::projection;
 GLuint Engine::program;
 bool Engine::keyStates[256], Engine::keyStatesSpecial[256];
 std::vector<Light*> Engine::lights;
+float posX = 0.0, posZ = -5.0f , mouseX, mouseY;
+int onClick = -1;
 
 btDiscreteDynamicsWorld* Engine::simulation = nullptr;
 btRigidBody *Engine::body1 = nullptr, *Engine::body2 = nullptr;
@@ -62,7 +64,7 @@ void Engine::init(int argc, char **argv)
 	glDepthFunc(GL_LESS);
 	glEnable(GL_TEXTURE_2D);
 
-	view = glm::lookAt(glm::vec3(0.0,5,zoom),
+	view = glm::lookAt(glm::vec3(posX,5,posZ),
 					   glm::vec3(0.0,0.0,0.0),
 					   glm::vec3(0.0,1.0,0.0));
 
@@ -274,6 +276,22 @@ void Engine::keyboardHandle()
 
 void Engine::mouse(int button, int state, int x_pos, int y_pos)
 {
+	//if(button == GLUT_RIGHT_BUTTON) {
+		if(x_pos > mouseX)
+			posX += 0.2f;
+		else
+			posX -= 0.2f;
+		if(y_pos > mouseY)
+			posZ += 0.2f;
+		else
+			posZ -= 0.2f;
+
+		mouseX = x_pos;
+		mouseY = y_pos;		
+	//}
+	view = glm::lookAt(glm::vec3(posX,5,posZ),
+					   glm::vec3(0.0,0.0,0.0),
+					   glm::vec3(0.0,1.0,0.0));
 
 }
 
