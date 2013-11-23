@@ -6,7 +6,6 @@
 enum MENU_ITEMS {
     MENU_PAUSE,
     MENU_RESUME,
-    MENU_CAMERA,
     MENU_RESTART,
     MENU_EXIT
 };
@@ -31,6 +30,8 @@ bool Engine::rightClick = false, Engine::leftClick = false, Engine::defaultCam =
 float Engine::mouseX, Engine::mouseY, Engine::posX = 0, Engine::posY = 0, Engine::distance = 20, Engine::posZ = -5;
 float Engine::boardAngle = 0, Engine::boardAngle2 = 0;
 std::vector<Light*> Engine::lights;
+float Engine::gameTime = 0.0f;
+int Engine::gameScore = 0;
 
 btDiscreteDynamicsWorld* Engine::simulation = nullptr;
 btRigidBody *Engine::body1 = nullptr, *Engine::body2 = nullptr;
@@ -52,7 +53,7 @@ void Engine::init(int argc, char **argv)
 	glutMouseFunc(mouse);
 	glutMotionFunc(mouseMovement);
 
-	//createMenus();
+	createMenus();
 
     GLenum status = glewInit();
     if( status != GLEW_OK)
@@ -66,7 +67,7 @@ void Engine::init(int argc, char **argv)
 	glDepthFunc(GL_LESS);
 	glEnable(GL_TEXTURE_2D);
 
-	view = glm::lookAt(glm::vec3(0.0,25.0,0.1),
+	view = glm::lookAt(glm::vec3(0.0,20.0,20),
 					   glm::vec3(0.0,0.0,0.0),
 					   glm::vec3(0.0,1.0,0.0));
 
@@ -82,7 +83,7 @@ void Engine::init(int argc, char **argv)
     //This program is what is run on the GPU
     program = ShaderLoader::linkShaders({vertexShader, fragmentShader});
 
-    objects.push_back(new SimObject(program, 1, "board.obj", btVector3(0,0,0)));
+    objects.push_back(new SimObject(program, 0, "board.obj", btVector3(0,0,0)));
 	objects.push_back(new SimObject(program, 1, "ball.obj", btVector3(0,2,0)));
 
 	objects[0]->getMesh()->setCollisionFlags(btCollisionObject::CF_KINEMATIC_OBJECT);
@@ -94,7 +95,7 @@ void Engine::init(int argc, char **argv)
 
 	lights.push_back(new Light(program, glm::vec3(0,5,0)));
 
-	lights[0]->enableTracking(objects[1]);
+	//lights[0]->enableTracking(objects[1]);
 	initialized = true;
 }
 
@@ -141,7 +142,7 @@ glm::mat4 Engine::getProjection()
 
 void Engine::render()
 {
-	glClearColor(0.0,0.0,0.5,1.0);
+	glClearColor(0.0,0.5,0.5,1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glUseProgram(program);
@@ -156,13 +157,20 @@ void Engine::render()
     glUseProgram(0);
 
     std::string text = specular ? "Specular: On" : "Specular: Off";
-    renderText(text.c_str(), glm::vec2(-0.95,0.85));
+    renderText(text.c_str(), glm::vec2(-0.95,0.8), glm::vec3(0.0,0.0,0.0));
 
     text = ambient ? "Ambient: On" : "Ambient: Off";
-    renderText(text.c_str(), glm::vec2(-0.95,0.78));
+    renderText(text.c_str(), glm::vec2(-0.95,0.73), glm::vec3(0.0,0.0,0.0));
 
     text = diffuse ? "Diffuse: On" : "Diffuse: Off";
-    renderText(text.c_str(), glm::vec2(-0.95,0.71));
+    renderText(text.c_str(), glm::vec2(-0.95,0.66), glm::vec3(0.0,0.0,0.0));
+
+    char textBuffer[256];
+    sprintf(textBuffer, "Time: %.2f", gameTime);
+    renderText(textBuffer, glm::vec2(0.65,0.85), glm::vec3(0.0,0.0,0.0));
+
+    sprintf(textBuffer, "Ball Count: %d", gameScore);
+    renderText(textBuffer, glm::vec2(-0.25, 0.85), glm::vec3(0.0,0.0,0.0));
 	glutSwapBuffers();
 }
 
@@ -174,6 +182,8 @@ void Engine::update()
     }
 
 	float dt = getDT();
+
+	gameTime += dt;
 
 	keyboardHandle();
 
@@ -190,6 +200,10 @@ void Engine::update()
 	glutPostRedisplay();
 }
 
+void Engine::score()
+{
+	gameScore++;
+}
 
 void Engine::reshape(int new_width, int new_height)
 {
@@ -321,6 +335,10 @@ void Engine::mouse(int button, int state, int x_pos, int y_pos)
 void Engine::mouseMovement(int x_pos, int y_pos)
 {
 	static float angle = 0.0f;
+
+	if(paused)
+		return;
+
 	if(rightClick) {
 		if (x_pos > mouseX)
 			angle += 0.1f;
@@ -339,26 +357,26 @@ void Engine::mouseMovement(int x_pos, int y_pos)
 	else if(leftClick) {
 		if(defaultCam) {
 			if(x_pos > mouseX)
-				boardAngle -= 0.03;
+				boardAngle -= 0.1;
 			else
-				boardAngle += 0.03;
+				boardAngle += 0.1;
 			if(y_pos > mouseY)
-				boardAngle2 += 0.03;
+				boardAngle2 += 0.1;
 			else
-				boardAngle2 -= 0.03;
+				boardAngle2 -= 0.1;
 			
 			mouseX = x_pos;
 			mouseY = y_pos;
 		}
 		else if(distance*sin(angle) >= 14 && distance * cos(angle) <= 14 ) {
 			if(x_pos > mouseX)
-				boardAngle2 -= 0.03;
+				boardAngle2 -= 0.1;
 			else
-				boardAngle2 += 0.03;
+				boardAngle2 += 0.1;
 			if(y_pos > mouseY)
-				boardAngle -= 0.03;
+				boardAngle -= 0.1;
 			else
-				boardAngle += 0.03;
+				boardAngle += 0.1;
 			
 			mouseX = x_pos;
 			mouseY = y_pos;
@@ -367,13 +385,13 @@ void Engine::mouseMovement(int x_pos, int y_pos)
 		
 		else if(distance*sin(angle) <= 14 && distance * cos(angle) <= -14 ) {
 			if(x_pos > mouseX)
-				boardAngle += 0.03;
+				boardAngle += 0.1;
 			else
-				boardAngle -= 0.03;
+				boardAngle -= 0.1;
 			if(y_pos > mouseY)
-				boardAngle2 -= 0.03;
+				boardAngle2 -= 0.1;
 			else
-				boardAngle2 += 0.03;
+				boardAngle2 += 0.1;
 		
 			mouseX = x_pos;
 			mouseY = y_pos;
@@ -382,13 +400,13 @@ void Engine::mouseMovement(int x_pos, int y_pos)
 
 		else if(distance*sin(angle) <= -14 && distance * cos(angle) <= 14 ) {
 			if(x_pos > mouseX)
-				boardAngle2 += 0.03;
+				boardAngle2 += 0.1;
 			else
-				boardAngle2 -= 0.03;
+				boardAngle2 -= 0.1;
 			if(y_pos > mouseY)
-				boardAngle += 0.03;
+				boardAngle += 0.1;
 			else
-				boardAngle -= 0.03;
+				boardAngle -= 0.1;
 			
 			mouseX = x_pos;
 			mouseY = y_pos;
@@ -397,13 +415,13 @@ void Engine::mouseMovement(int x_pos, int y_pos)
 
 		else if(distance*sin(angle) >= -14 && distance * cos(angle) >= 14 ) {
 			if(x_pos > mouseX)
-				boardAngle -= 0.03;
+				boardAngle -= 0.1;
 			else
-				boardAngle += 0.03;
+				boardAngle += 0.1;
 			if(y_pos > mouseY)
-				boardAngle2 += 0.03;
+				boardAngle2 += 0.1;
 			else
-				boardAngle2 -= 0.03;
+				boardAngle2 -= 0.1;
 			
 			mouseX = x_pos;
 			mouseY = y_pos;
@@ -429,7 +447,7 @@ void Engine::initPhysics()
 	btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver();
 	simulation = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfig);
 
-	simulation->setGravity(btVector3(0,-10,0));
+	simulation->setGravity(btVector3(0,-50,0));
 	//btCollisionShape* groundShape = new btStaticPlaneShape(btVector3(0,1,0),1);
 	//btDefaultMotionState* groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(0,-1,0)));
 
@@ -451,17 +469,52 @@ void Engine::initPhysics()
 
 void Engine::createMenus()
 {
+	glutCreateMenu(menuActions);
 
+	glutAddMenuEntry("Pause", MENU_PAUSE);
+	glutAddMenuEntry("Resume", MENU_RESUME);
+	glutAddMenuEntry("Restart", MENU_RESTART);
+	glutAddMenuEntry("Exit", MENU_EXIT);
+
+	glutAttachMenu(GLUT_MIDDLE_BUTTON);
 }
 
 void Engine::menuActions(int option)
 {
+	switch(option) {
+		case MENU_PAUSE:
+			paused = true;
+		break;
+
+		case MENU_RESUME:
+			paused = false;
+		break;
+
+		case MENU_RESTART:
+			gameTime = 0.0;
+			gameScore = 0;
+
+			boardAngle = boardAngle2 = 0.0;
+
+			objects[0]->rotate(0,btVector3(1,1,1));
+			objects[1]->reset();
+		break;
+
+		case MENU_EXIT:
+			#ifndef __APPLE__
+				glutLeaveMainLoop();
+			#else
+				exit(0);
+			#endif
+		break;
+
+	}
 }
 
 void Engine::renderText(const char *text, glm::vec2 pos, glm::vec3 color)
 {
     glRasterPos2f(pos[0],pos[1]);
-	glColor3f(1.0f,1.0f,1.0f);
+	glColor4f(color[0],color[1],color[2], 1.0f);
 
 #ifndef __APPLE__ // this function does not work on Mac... problems with freeglut
     glutBitmapString(GLUT_BITMAP_HELVETICA_18, (const unsigned char*)text);

@@ -1,6 +1,12 @@
 #ifndef LIGHT_H
 #define LIGHT_H
 
+#ifdef __APPLE__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-W#warnings"
+#pragma clang diagnostic ignored "-Woverloaded-virtual"
+#endif
+
 #include <iostream>
 #include <stdexcept>
 #include <GL/glew.h>
@@ -9,6 +15,10 @@
 #include <btBulletDynamicsCommon.h>
 
 #include "simobject.h"
+
+#ifdef __APPLE__
+#pragma clang diagnostic pop
+#endif
 
 class Light {
 public:

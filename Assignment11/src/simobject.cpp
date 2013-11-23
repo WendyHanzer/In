@@ -74,8 +74,8 @@ SimObject::SimObject(GLuint program, btScalar mass, std::string modelFile, btVec
 	}
 	shape->calculateLocalInertia(mass, fallInertia);
 	btRigidBody::btRigidBodyConstructionInfo shape1CI(mass,fallMotionState,shape,fallInertia);
-	shape1CI.m_friction = 0.5;
-	shape1CI.m_restitution = 0.0;
+	shape1CI.m_friction = 0.0;
+	//shape1CI.m_restitution = 0.0;
 
 	meshBody = new btRigidBody(shape1CI);
 	meshBody->setActivationState(DISABLE_DEACTIVATION);
@@ -104,6 +104,12 @@ void SimObject::update()
 		}
 
 	model = glMat;
+
+	auto pos = getPosition();
+	if(pos.y() < -15) {
+		Engine::score();
+		reset();
+	}
 }
 
 void SimObject::render(bool ambient, bool specular, bool diffuse)
@@ -205,6 +211,15 @@ void SimObject::rotate(float angle, btVector3 y)
 
     meshBody->getMotionState()->setWorldTransform(trans);
     meshBody->setCenterOfMassTransform(trans);
+}
+
+void SimObject::reset()
+{
+	auto mesh = getMesh();
+	mesh->setLinearVelocity(btVector3(0,0,0));
+	mesh->setAngularVelocity(btVector3(0,0,0));
+
+	move(btVector3(0,2,0));
 }
 
 

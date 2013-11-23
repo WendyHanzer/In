@@ -1,6 +1,11 @@
 #ifndef SIMOBJECT_H
 #define SIMOBJECT_H
 
+#ifdef __APPLE__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-W#warnings"
+#pragma clang diagnostic ignored "-Woverloaded-virtual"
+#endif
 #include <GL/glew.h>
 
 #include <glm/glm.hpp>
@@ -16,6 +21,10 @@
 #include "vertex.h"
 #include "modelloader.h"
 
+#ifdef __APPLE__
+#pragma clang diagnostic pop
+#endif
+
 class SimObject
 {
 public:
@@ -26,6 +35,7 @@ public:
 	void render(bool ambient, bool specular, bool diffuse);
 	void move(btVector3 pos = btVector3(0,0,0));
 	void rotate(float angle, btVector3 y = btVector3(0,1,0));
+	void reset();
 
 	virtual btRigidBody* getMesh() const;
 	virtual void setModel(glm::mat4 newModel);

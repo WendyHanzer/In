@@ -1,6 +1,12 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
+#ifdef __APPLE__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-W#warnings"
+#pragma clang diagnostic ignored "-Woverloaded-virtual"
+#endif
+
 #include <GL/glew.h>
 #ifndef __APPLE__
 #include <GL/freeglut.h>
@@ -24,6 +30,10 @@
 #include "simobject.h"
 #include "light.h"
 
+#ifdef __APPLE__
+#pragma clang diagnostic pop
+#endif
+
 class Engine
 {
 public:
@@ -37,7 +47,7 @@ public:
 	// glut callback functions
 	static void render();
 	static void update();
-	static void score(int x);
+	static void score();
 	static void reshape(int new_width, int new_height);
 
 	static void keyboard(unsigned char key, int x_pos, int y_pos);
@@ -83,12 +93,11 @@ private:
 	static bool rightClick, leftClick, defaultCam;
 	static float mouseX, mouseY, posX, posY, distance, posZ;
 	static float boardAngle, boardAngle2;
+	static float gameTime;
+	static int gameScore;
 
 	static std::vector<Light*> lights;
 
-    //static int camera;
-    //static float dAngle;
-    //static int xOrigin;
 
 	// physics
 	static btDiscreteDynamicsWorld* simulation;

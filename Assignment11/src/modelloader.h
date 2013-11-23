@@ -1,6 +1,12 @@
 #ifndef MODEL_LOADER_H
 #define MODEL_LOADER_H
 
+#ifdef __APPLE__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-W#warnings"
+#pragma clang diagnostic ignored "-Woverloaded-virtual"
+#endif
+
 #include <GL/glew.h>
 
 #include <iostream>
@@ -24,7 +30,11 @@
 
 #include <FreeImagePlus.h>
 
-#include "../src/vertex.h"
+#include "vertex.h"
+
+#ifdef __APPLE__
+#pragma clang diagnostic pop
+#endif
 
 class ModelLoader
 {
