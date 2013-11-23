@@ -321,22 +321,22 @@ void Engine::keyboardHandle()
 
 	// set keyboard mapping for precise controls
     if(keyStatesSpecial[GLUT_KEY_RIGHT]) {
-    	boardAngle -= 0.05;
+    	boardAngle -= 0.01;
 
     }
 
     if(keyStatesSpecial[GLUT_KEY_LEFT]) {
-        boardAngle += 0.05;
+        boardAngle += 0.01;
 
     }
 
     if(keyStatesSpecial[GLUT_KEY_UP]) {
-    	boardAngle2 -= 0.05;
+    	boardAngle2 -= 0.01;
 
     }
 
     if(keyStatesSpecial[GLUT_KEY_DOWN]) {
-    	boardAngle2 += 0.05;
+    	boardAngle2 += 0.01;
 
     }
 	
@@ -378,6 +378,7 @@ void Engine::mouse(int button, int state, int x_pos, int y_pos)
 void Engine::mouseMovement(int x_pos, int y_pos)
 {
 	static float angle = 0.0f;
+	static float speed = 0.01f;
 
 	// if paused don't update mouse values
 	if(paused)
@@ -403,26 +404,26 @@ void Engine::mouseMovement(int x_pos, int y_pos)
 	else if(leftClick) {
 		if(defaultCam) {
 			if(x_pos > mouseX)
-				boardAngle -= 0.1;
+				boardAngle -= speed;
 			else
-				boardAngle += 0.1;
+				boardAngle += speed;
 			if(y_pos > mouseY)
-				boardAngle2 += 0.1;
+				boardAngle2 += speed;
 			else
-				boardAngle2 -= 0.1;
+				boardAngle2 -= speed;
 			
 			mouseX = x_pos;
 			mouseY = y_pos;
 		}
 		else if(distance*sin(angle) >= 14 && distance * cos(angle) <= 14 ) {
 			if(x_pos > mouseX)
-				boardAngle2 -= 0.1;
+				boardAngle2 -= speed;
 			else
-				boardAngle2 += 0.1;
+				boardAngle2 += speed;
 			if(y_pos > mouseY)
-				boardAngle -= 0.1;
+				boardAngle -= speed;
 			else
-				boardAngle += 0.1;
+				boardAngle += speed;
 			
 			mouseX = x_pos;
 			mouseY = y_pos;
@@ -431,13 +432,13 @@ void Engine::mouseMovement(int x_pos, int y_pos)
 		
 		else if(distance*sin(angle) <= 14 && distance * cos(angle) <= -14 ) {
 			if(x_pos > mouseX)
-				boardAngle += 0.1;
+				boardAngle += speed;
 			else
-				boardAngle -= 0.1;
+				boardAngle -= speed;
 			if(y_pos > mouseY)
-				boardAngle2 -= 0.1;
+				boardAngle2 -= speed;
 			else
-				boardAngle2 += 0.1;
+				boardAngle2 += speed;
 		
 			mouseX = x_pos;
 			mouseY = y_pos;
@@ -446,13 +447,13 @@ void Engine::mouseMovement(int x_pos, int y_pos)
 
 		else if(distance*sin(angle) <= -14 && distance * cos(angle) <= 14 ) {
 			if(x_pos > mouseX)
-				boardAngle2 += 0.1;
+				boardAngle2 += speed;
 			else
-				boardAngle2 -= 0.1;
+				boardAngle2 -= speed;
 			if(y_pos > mouseY)
-				boardAngle += 0.1;
+				boardAngle += speed;
 			else
-				boardAngle -= 0.1;
+				boardAngle -= speed;
 			
 			mouseX = x_pos;
 			mouseY = y_pos;
@@ -461,18 +462,25 @@ void Engine::mouseMovement(int x_pos, int y_pos)
 
 		else if(distance*sin(angle) >= -14 && distance * cos(angle) >= 14 ) {
 			if(x_pos > mouseX)
-				boardAngle -= 0.1;
+				boardAngle -= speed;
 			else
-				boardAngle += 0.1;
+				boardAngle += speed;
 			if(y_pos > mouseY)
-				boardAngle2 += 0.1;
+				boardAngle2 += speed;
 			else
-				boardAngle2 -= 0.1;
+				boardAngle2 -= speed;
 			
 			mouseX = x_pos;
 			mouseY = y_pos;
 
 		}
+		if(boardAngle > 0.5) boardAngle = 0.5;
+		if(boardAngle < -0.5) boardAngle = -0.5;
+		if(boardAngle2 > 0.5) boardAngle2 = 0.5;
+		if(boardAngle2 < -0.5) boardAngle2 = -0.5;
+
+		 
+		std::cout << boardAngle << " " << boardAngle2 << std::endl;
 
 		
 		// update board with new rotation value
