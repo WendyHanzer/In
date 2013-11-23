@@ -80,8 +80,9 @@ private:
 	static glm::mat4 projection;
 	static bool keyStates[256];
 	static bool keyStatesSpecial[256];
-	static bool rightClick, leftClick;
+	static bool rightClick, leftClick, defaultCam;
 	static float mouseX, mouseY, posX, posY, distance, posZ;
+	static float boardAngle, boardAngle2;
 
 	static std::vector<Light*> lights;
 
