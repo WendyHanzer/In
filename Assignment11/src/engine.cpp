@@ -28,7 +28,7 @@ glm::mat4 Engine::projection;
 GLuint Engine::program;
 bool Engine::keyStates[256], Engine::keyStatesSpecial[256];
 bool Engine::rightClick = false, Engine::leftClick = false;
-float Engine::mouseX, Engine::mouseY, Engine::posX = 0, Engine::posY = 5, Engine::posZ = -5;
+float Engine::mouseX, Engine::mouseY, Engine::posX = 0, Engine::posY = 0, Engine::distance = 20, Engine::posZ = -5;
 std::vector<Light*> Engine::lights;
 
 btDiscreteDynamicsWorld* Engine::simulation = nullptr;
@@ -65,7 +65,7 @@ void Engine::init(int argc, char **argv)
 	glDepthFunc(GL_LESS);
 	glEnable(GL_TEXTURE_2D);
 
-	view = glm::lookAt(glm::vec3(posX,5,posZ),
+	view = glm::lookAt(glm::vec3(10,distance,10),
 					   glm::vec3(0.0,0.0,0.0),
 					   glm::vec3(0.0,1.0,0.0));
 
@@ -261,32 +261,34 @@ void Engine::keyboardHandle()
     }
 */
     if(keyStatesSpecial[GLUT_KEY_RIGHT]) {
-    	angle += 0.01;
+    	angle += 0.001;
 
     }
 
     if(keyStatesSpecial[GLUT_KEY_LEFT]) {
-        angle -= 0.01;
+        angle -= 0.001;
 
     }
 
     if(keyStatesSpecial[GLUT_KEY_UP]) {
-    	angle2 += 0.01;
+    	angle2 += 0.001;
 
     }
 
     if(keyStatesSpecial[GLUT_KEY_DOWN]) {
-    	angle2 -= 0.01;
+    	angle2 -= 0.001;
 
     }
-
+	/*
         btTransform trans;
         objects[0]->getMesh()->getMotionState()->getWorldTransform(trans);
         auto rotation = trans.getRotation();
         rotation += btQuaternion(btVector3(0,0,1), angle) + btQuaternion(btVector3(1,0,0), angle2);
         trans.setRotation(rotation);
         objects[0]->getMesh()->getMotionState()->setWorldTransform(trans);
+	*/
 }
+
 
 void Engine::mouse(int button, int state, int x_pos, int y_pos)
 {
@@ -300,34 +302,107 @@ void Engine::mouse(int button, int state, int x_pos, int y_pos)
 
 	if(button == GLUT_LEFT_BUTTON) {
 		if(state == GLUT_UP)
-			leftClick = true;
+			leftClick = false;
 
 		else
-			leftClick = false;
+			leftClick = true;
+	}
+	if(button == 3) {
+		distance += 1.0f;
+	}
+	if(button == 4) {
+		distance -= 1.0f;
 	}
 
 }
 
 void Engine::mouseMovement(int x_pos, int y_pos)
 {
+	static float angle = 0.0f;
+	static float angle2 = 0.0f;
+	static float angle3 = 0.0f;
 	if(rightClick) {
 		if (x_pos > mouseX)
-			posX += 0.1f;
+			angle += 0.1f;
 		else
-			posX -= 0.1f;
-
-		if (y_pos > mouseY)
-			posY += 0.1f;
-		else
-			posY -= 0.1f;
+			angle -= 0.1f;
 
 		mouseX = x_pos;
 		mouseY = y_pos;
 
-		view = glm::lookAt(glm::vec3(posX,posY,posZ),
+		view = glm::lookAt(glm::vec3(distance * sin(angle),distance,distance * cos(angle)),
 						   glm::vec3(0,0,0),
 						   glm::vec3(0,1,0));
 
+		std::cout << distance * sin(angle) << " " << distance << " " << distance * cos(angle) << std::endl;
+
+	}
+
+	else if(leftClick) {
+		if(distance*sin(angle) >= 14 && distance * cos(angle) <= 14 ) {
+			if(x_pos > mouseX)
+				angle3 -= 0.03;
+			else
+				angle3 += 0.03;
+			if(y_pos > mouseY)
+				angle2 -= 0.03;
+			else
+				angle2 += 0.03;
+			
+			mouseX = x_pos;
+			mouseY = y_pos;
+		}
+		
+		else if(distance*sin(angle) <= 14 && distance * cos(angle) <= -14 ) {
+			if(x_pos > mouseX)
+				angle2 += 0.03;
+			else
+				angle2 -= 0.03;
+			if(y_pos > mouseY)
+				angle3 -= 0.03;
+			else
+				angle3 += 0.03;
+		
+			mouseX = x_pos;
+			mouseY = y_pos;
+		}
+
+		else if(distance*sin(angle) <= -14 && distance * cos(angle) <= 14 ) {
+			if(x_pos > mouseX)
+				angle3 += 0.03;
+			else
+				angle3 -= 0.03;
+			if(y_pos > mouseY)
+				angle2 += 0.03;
+			else
+				angle2 -= 0.03;
+			
+			mouseX = x_pos;
+			mouseY = y_pos;
+		}
+
+		else if(distance*sin(angle) >= -14 && distance * cos(angle) >= 14 ) {
+			if(x_pos > mouseX)
+				angle2 -= 0.03;
+			else
+				angle2 += 0.03;
+			if(y_pos > mouseY)
+				angle3 += 0.03;
+			else
+				angle3 -= 0.03;
+			
+			mouseX = x_pos;
+			mouseY = y_pos;
+		}
+
+		
+		
+		btTransform trans;
+        objects[0]->getMesh()->getMotionState()->getWorldTransform(trans);
+        auto rotation = trans.getRotation();
+        rotation += btQuaternion(btVector3(0,0,1), angle2) + btQuaternion(btVector3(1,0,0), angle3);
+        trans.setRotation(rotation);
+        objects[0]->getMesh()->getMotionState()->setWorldTransform(trans);
 	}
 }
 

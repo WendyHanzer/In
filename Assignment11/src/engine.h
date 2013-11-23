@@ -81,7 +81,7 @@ private:
 	static bool keyStates[256];
 	static bool keyStatesSpecial[256];
 	static bool rightClick, leftClick;
-	static float mouseX, mouseY, posX, posY, posZ;
+	static float mouseX, mouseY, posX, posY, distance, posZ;
 
 	static std::vector<Light*> lights;
 
