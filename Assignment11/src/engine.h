@@ -1,6 +1,7 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
+// disable 3rd party library warnings on Apple
 #ifdef __APPLE__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-W#warnings"
@@ -26,10 +27,10 @@
 #include <BulletCollision/Gimpact/btGImpactCollisionAlgorithm.h>
 
 #include "shaderloader.h"
-//#include "modelloader.h"
 #include "simobject.h"
 #include "light.h"
 
+// re-enable warnings
 #ifdef __APPLE__
 #pragma clang diagnostic pop
 #endif
@@ -37,6 +38,7 @@
 class Engine
 {
 public:
+	// critical functions
 	static void init(int argc, char **argv);
 	static int run();
 	static void cleanUp();
@@ -50,11 +52,11 @@ public:
 	static void score();
 	static void reshape(int new_width, int new_height);
 
+	// input functions
 	static void keyboard(unsigned char key, int x_pos, int y_pos);
 	static void keyboardSpecial(int key, int x_pos, int y_pos);
 	static void keyboardUp(unsigned char key, int x_pos, int y_pos);
 	static void keyboardSpecialUp(int key, int x_pos, int y_pos);
-	//static void changeCamera(int x);
 	static void keyboardHandle();
 	static void mouse(int button, int state, int x_pos, int y_pos);
 	static void mouseMovement(int x_pos, int y_pos);
@@ -64,7 +66,6 @@ public:
 	static void renderText(const char *text, glm::vec2 pos = glm::vec2(-0.25f,-0.85f),
 	    glm::vec3 color = glm::vec3(1.0f,1.0f,1.0f));
 
-    //static void resetGame();
 
 private:
 	static void initPhysics();
@@ -72,10 +73,7 @@ private:
 	// member variables
 	static int width, height;
 	static ShaderLoader vertexShader, fragmentShader;
-	//static ModelLoader modelLoader;
 	static bool paused, initialized;
-	//static int playerOneScore, playerTwoScore;
-	//static std::string modelFile;
 	static bool ambient, specular, diffuse;
 	static std::string vertexFile;
 	static std::string fragmentFile;

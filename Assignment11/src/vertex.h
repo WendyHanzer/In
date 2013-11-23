@@ -1,6 +1,13 @@
 #ifndef VERTEX_H
 #define VERTEX_H
 
+// disable 3rd party library warnings on Apple
+#ifdef __APPLE__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-W#warnings"
+#pragma clang diagnostic ignored "-Woverloaded-virtual"
+#endif
+
 #ifndef __APPLE__
 #include <GL/gl.h>
 #else
@@ -9,6 +16,12 @@
 
 #include <iostream>
 
+// re-enable warnings
+#ifdef __APPLE__
+#pragma clang diagnostic pop
+#endif
+
+// vertex struct containing all OpenGL data necessary
 struct Vertex
 {
     GLfloat position[3];
@@ -17,14 +30,6 @@ struct Vertex
     GLfloat normal[3];
 
     GLfloat shininess;
-/*
-    friend std::ostream& operator << (std::ostream& out, const Vertex &vert) {
-        out << "Pos: " << vert.position[0] << ' ' << vert.position[1] << ' ' << vert.position[2] << std::endl;
-        out << "Col: " << vert.color[0] << ' ' << vert.color[1] << ' ' << vert.color[2];
-
-        return out;
-    }
-*/
 };
 
 #endif // VERTEX_H

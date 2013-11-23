@@ -10,13 +10,12 @@ enum MENU_ITEMS {
     MENU_EXIT
 };
 
+// initialize all static variables
 int Engine::width = 1280, Engine::height = 720;
 ShaderLoader Engine::vertexShader(GL_VERTEX_SHADER),
 			Engine::fragmentShader(GL_FRAGMENT_SHADER);
-//ModelLoader Engine::modelLoader;
 bool Engine::paused = false, Engine::initialized = false;
 bool Engine::ambient = true, Engine::specular = true, Engine::diffuse = true;
-//std::string Engine::modelFile("cube.obj");
 std::string Engine::vertexFile("shaders/vert.vs"),
 			Engine::fragmentFile("shaders/frag.fs");
 float Engine::zoom = -10.0f;
@@ -38,11 +37,13 @@ btRigidBody *Engine::body1 = nullptr, *Engine::body2 = nullptr;
 
 void Engine::init(int argc, char **argv)
 {
+	// init glut
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH | GLUT_RGBA);
 	glutInitWindowSize(width,height);
 	glutCreateWindow("Labyrinth");
 
+	// set up glut callbacks
 	glutDisplayFunc(render);
 	glutReshapeFunc(reshape);
 	glutIdleFunc(update);
@@ -53,8 +54,10 @@ void Engine::init(int argc, char **argv)
 	glutMouseFunc(mouse);
 	glutMotionFunc(mouseMovement);
 
+	// create popup menu
 	createMenus();
 
+	// initialize GLEW
     GLenum status = glewInit();
     if( status != GLEW_OK)
     {
@@ -63,60 +66,74 @@ void Engine::init(int argc, char **argv)
         throw std::runtime_error("GLEW initialization failed!");
     }
 
+    // init OpenGL functions
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glEnable(GL_TEXTURE_2D);
 
-	view = glm::lookAt(glm::vec3(0.0,20.0,20),
+	// init view matrix
+	view = glm::lookAt(glm::vec3(0.0,25.0,0.1),
 					   glm::vec3(0.0,0.0,0.0),
 					   glm::vec3(0.0,1.0,0.0));
 
+	// init projection matrix
 	projection = glm::perspective(45.0f, float(width)/float(height), 0.01f, 100.0f);
 
+	// initialize physics engine
 	initPhysics();
 
-    //--load shaders
+    // load shaders
     if(!vertexShader.load(vertexFile) || !fragmentShader.load(fragmentFile))
         return;
 
-    //Now we link the 2 shader objects into a program
-    //This program is what is run on the GPU
+    // link shaders
     program = ShaderLoader::linkShaders({vertexShader, fragmentShader});
 
+    // create board and ball
     objects.push_back(new SimObject(program, 0, "board.obj", btVector3(0,0,0)));
 	objects.push_back(new SimObject(program, 1, "ball.obj", btVector3(0,2,0)));
 
+	// set up board as kinematic object
 	objects[0]->getMesh()->setCollisionFlags(btCollisionObject::CF_KINEMATIC_OBJECT);
 
-
+	// add objects to the simulation enviornment
 	for(SimObject *object : objects) {
 		simulation->addRigidBody(object->getMesh());
 	}
 
-	lights.push_back(new Light(program, glm::vec3(0,5,0)));
+	// create lights
+	lights.push_back(new Light(program, glm::vec3(3,5,0)));
 
-	//lights[0]->enableTracking(objects[1]);
+	// set initialized flag to true
 	initialized = true;
 }
 
 int Engine::run()
 {
+	// if Engine::init not called or failed, throw exception
 	if(!initialized)
 		throw std::runtime_error("Engine::init() must be called first!");
 
+	// initialize clock
 	t1 = std::chrono::high_resolution_clock::now();
+
+	// enter glut main event loop
 	glutMainLoop();
 
+	// clean up objects
 	cleanUp();
+
 	return 0;
 }
 
 void Engine::cleanUp()
 {
+	// delete all simulation objects
 	for(SimObject* object : objects) {
 		delete object;
 	}
 
+	// delete all lights
 	for(Light *light : lights) {
 		delete light;
 	}
@@ -124,6 +141,7 @@ void Engine::cleanUp()
 
 float Engine::getDT()
 {
+	// get difference in time between ticks
 	t2 = std::chrono::high_resolution_clock::now();
 	float ret = std::chrono::duration_cast<std::chrono::duration<float>>(t2-t1).count();
 	t1 = std::chrono::high_resolution_clock::now();
@@ -142,61 +160,83 @@ glm::mat4 Engine::getProjection()
 
 void Engine::render()
 {
+	// text buffer for rendering text
+	char textBuffer[256];
+	// init GL background color and clear buffer bits
 	glClearColor(0.0,0.5,0.5,1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	// use main shader program
 	glUseProgram(program);
+
+	// render all objects
 	for(SimObject* object : objects) {
 		object->render(ambient, specular, diffuse);
 	}
 
+	// render all lights
 	for(Light *light : lights) {
 		light->render(ambient, specular, diffuse);
 	}
 
+	// disable main shader program
     glUseProgram(0);
 
+    // render specular light text
     std::string text = specular ? "Specular: On" : "Specular: Off";
-    renderText(text.c_str(), glm::vec2(-0.95,0.8), glm::vec3(0.0,0.0,0.0));
+    renderText(text.c_str(), glm::vec2(-0.95,0.78), glm::vec3(0.0,0.0,0.0));
 
+    // render ambient light text
     text = ambient ? "Ambient: On" : "Ambient: Off";
-    renderText(text.c_str(), glm::vec2(-0.95,0.73), glm::vec3(0.0,0.0,0.0));
+    renderText(text.c_str(), glm::vec2(-0.95,0.71), glm::vec3(0.0,0.0,0.0));
 
+    // render diffuse light text
     text = diffuse ? "Diffuse: On" : "Diffuse: Off";
-    renderText(text.c_str(), glm::vec2(-0.95,0.66), glm::vec3(0.0,0.0,0.0));
+    renderText(text.c_str(), glm::vec2(-0.95,0.64), glm::vec3(0.0,0.0,0.0));
 
-    char textBuffer[256];
+    // fill buffer with value and render time text
     sprintf(textBuffer, "Time: %.2f", gameTime);
     renderText(textBuffer, glm::vec2(0.65,0.85), glm::vec3(0.0,0.0,0.0));
 
+    // fill buffer with value and render game score
     sprintf(textBuffer, "Ball Count: %d", gameScore);
-    renderText(textBuffer, glm::vec2(-0.25, 0.85), glm::vec3(0.0,0.0,0.0));
+    renderText(textBuffer, glm::vec2(-0.95, 0.85), glm::vec3(0.0,0.0,0.0));
+
+    // draw to the screen
 	glutSwapBuffers();
 }
 
 void Engine::update()
 {
+	// if paused update clock tick and do nothing
     if(paused) {
         t1 = std::chrono::high_resolution_clock::now();
         return;
     }
 
+    // get difference in time tick
 	float dt = getDT();
 
+	// add change in time to game time
 	gameTime += dt;
 
+	// trigger keyboard actions
 	keyboardHandle();
 
+	// step physics
 	simulation->stepSimulation(dt);
 
+	// update all objects
 	for(SimObject *object : objects) {
 		object->update();
 	}
 
+	// update all lights
 	for(Light *light : lights) {
 		light->update();
 	}
 
+	// trigger render event
 	glutPostRedisplay();
 }
 
@@ -207,34 +247,44 @@ void Engine::score()
 
 void Engine::reshape(int new_width, int new_height)
 {
+	// update width and height
 	width = new_width;
 	height = new_height;
 
+	// reset viewport
 	glViewport(0,0,width,height);
 
+	// update projection matrix with new width and height
 	projection = glm::perspective(45.0f, float(width)/float(height), 0.01f, 100.0f);
 }
 
 void Engine::keyboard(unsigned char key, int x_pos, int y_pos)
 {
+	// set state of keypress to true
     keyStates[int(key)] = true;
 
+    // special key cases
     switch(key) {
+    	// toggle ambient light
         case 'a':
         case 'A':
             ambient = !ambient;
         break;
 
+        // toggle specular light
         case 's':
         case 'S':
             specular = !specular;
         break;
 
+        // toggle diffuse light
         case 'd':
         case 'D':
             diffuse = !diffuse;
         break;
-		case 32:
+
+        // if space is pressed reset to default camera
+		case SPACE:
 			defaultCam = true;
 			view = glm::lookAt(glm::vec3(0.0,25.0,0.1),
 					   glm::vec3(0.0,0.0,0.0),
@@ -260,6 +310,7 @@ void Engine::keyboardSpecialUp(int key, int x_pos, int y_pos)
 
 void Engine::keyboardHandle()
 {
+	// if Escape pressed quit
     if(keyStates[ESC]) {
 	#ifndef __APPLE__
 	    glutLeaveMainLoop();
@@ -267,51 +318,42 @@ void Engine::keyboardHandle()
 		exit(0);
 	#endif
 	}
-/*
-	if(keyStates[int('a')]) {
-		ambient = !ambient;
-	}
 
-	if(keyStates[int('s')]) {
-	    specular = !specular;
-	}
-
-	if(keyStates[int('d')]) {
-	    diffuse = !diffuse;
-    }
-*/
+	// set keyboard mapping for precise controls
     if(keyStatesSpecial[GLUT_KEY_RIGHT]) {
-    	boardAngle -= 0.001;
+    	boardAngle -= 0.05;
 
     }
 
     if(keyStatesSpecial[GLUT_KEY_LEFT]) {
-        boardAngle += 0.001;
+        boardAngle += 0.05;
 
     }
 
     if(keyStatesSpecial[GLUT_KEY_UP]) {
-    	boardAngle2 -= 0.001;
+    	boardAngle2 -= 0.05;
 
     }
 
     if(keyStatesSpecial[GLUT_KEY_DOWN]) {
-    	boardAngle2 += 0.001;
+    	boardAngle2 += 0.05;
 
     }
 	
-        btTransform trans;
-        objects[0]->getMesh()->getMotionState()->getWorldTransform(trans);
-        auto rotation = trans.getRotation();
-        rotation += btQuaternion(btVector3(0,0,1), boardAngle) + btQuaternion(btVector3(1,0,0), boardAngle2);
-        trans.setRotation(rotation);
-        objects[0]->getMesh()->getMotionState()->setWorldTransform(trans);
+	// update board with new rotation value
+    btTransform trans;
+    objects[0]->getMesh()->getMotionState()->getWorldTransform(trans);
+    auto rotation = trans.getRotation();
+    rotation += btQuaternion(btVector3(0,0,1), boardAngle) + btQuaternion(btVector3(1,0,0), boardAngle2);
+    trans.setRotation(rotation);
+    objects[0]->getMesh()->getMotionState()->setWorldTransform(trans);
 	
 }
 
 
 void Engine::mouse(int button, int state, int x_pos, int y_pos)
 {
+	// if right click set flags
 	if(button == GLUT_RIGHT_BUTTON) {
 		if(state == GLUT_UP)
 			rightClick = false;
@@ -322,6 +364,7 @@ void Engine::mouse(int button, int state, int x_pos, int y_pos)
 		}
 	}
 
+	// if left click set flags
 	if(button == GLUT_LEFT_BUTTON) {
 		if(state == GLUT_UP)
 			leftClick = false;
@@ -336,9 +379,11 @@ void Engine::mouseMovement(int x_pos, int y_pos)
 {
 	static float angle = 0.0f;
 
+	// if paused don't update mouse values
 	if(paused)
 		return;
 
+	// if right click update camera on move
 	if(rightClick) {
 		if (x_pos > mouseX)
 			angle += 0.1f;
@@ -354,6 +399,7 @@ void Engine::mouseMovement(int x_pos, int y_pos)
 
 	}
 
+	// if left click update board angle
 	else if(leftClick) {
 		if(defaultCam) {
 			if(x_pos > mouseX)
@@ -429,7 +475,7 @@ void Engine::mouseMovement(int x_pos, int y_pos)
 		}
 
 		
-		
+		// update board with new rotation value
 		btTransform trans;
         objects[0]->getMesh()->getMotionState()->getWorldTransform(trans);
         auto rotation = trans.getRotation();
@@ -441,68 +487,68 @@ void Engine::mouseMovement(int x_pos, int y_pos)
 
 void Engine::initPhysics()
 {
+	// initialize all variables for creating a physics simulation
 	btBroadphaseInterface *broadphase = new btDbvtBroadphase();
 	btDefaultCollisionConfiguration* collisionConfig = new btDefaultCollisionConfiguration();
 	btCollisionDispatcher *dispatcher = new btCollisionDispatcher(collisionConfig);
 	btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver();
+
+	// create a physics simulation
 	simulation = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfig);
 
+	// initialize simulation gravity to -50
 	simulation->setGravity(btVector3(0,-50,0));
-	//btCollisionShape* groundShape = new btStaticPlaneShape(btVector3(0,1,0),1);
-	//btDefaultMotionState* groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(0,-1,0)));
 
-	//btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(0,groundMotionState,groundShape,btVector3(0,0,0));
-	//btRigidBody* groundRigidBody = new btRigidBody(groundRigidBodyCI);
-	//simulation->addRigidBody(groundRigidBody);
-
+	// register GImpact algorithm for collisions
 	btGImpactCollisionAlgorithm::registerAlgorithm(dispatcher);
-/*
-	btDefaultMotionState* fallMotionState = new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(0,10.9,0)));
-	btScalar mass = 0;
-	btVector3 fallInertia(0,0,0);
-	shape1->calculateLocalInertia(mass, fallInertia);
-	btRigidBody::btRigidBodyConstructionInfo shape1CI(mass,fallMotionState,shape1,fallInertia);
-	body1 = new btRigidBody(shape1CI);
-	simulation->addRigidBody(body1);
-*/
 }
 
 void Engine::createMenus()
 {
+	// create GLUT menu
 	glutCreateMenu(menuActions);
 
+	// add menu elements
 	glutAddMenuEntry("Pause", MENU_PAUSE);
 	glutAddMenuEntry("Resume", MENU_RESUME);
 	glutAddMenuEntry("Restart", MENU_RESTART);
 	glutAddMenuEntry("Exit", MENU_EXIT);
 
+	// attach menu to scroll wheel
 	glutAttachMenu(GLUT_MIDDLE_BUTTON);
 }
 
 void Engine::menuActions(int option)
 {
 	switch(option) {
+		// pause simulation
 		case MENU_PAUSE:
 			paused = true;
 		break;
 
+		// resume simulation
 		case MENU_RESUME:
 			paused = false;
 		break;
 
+		// restart game
 		case MENU_RESTART:
+			// reset game values
 			gameTime = 0.0;
 			gameScore = 0;
-
 			boardAngle = boardAngle2 = 0.0;
 
+			// reset objects to inital positions
 			objects[0]->rotate(0,btVector3(1,1,1));
 			objects[1]->reset();
 		break;
 
+		// exit game
 		case MENU_EXIT:
+			// if linux just leave main loop
 			#ifndef __APPLE__
 				glutLeaveMainLoop();
+			// else kill main thread
 			#else
 				exit(0);
 			#endif
@@ -513,16 +559,22 @@ void Engine::menuActions(int option)
 
 void Engine::renderText(const char *text, glm::vec2 pos, glm::vec3 color)
 {
+	// init text position
     glRasterPos2f(pos[0],pos[1]);
+    // init text color
 	glColor4f(color[0],color[1],color[2], 1.0f);
 
-#ifndef __APPLE__ // this function does not work on Mac... problems with freeglut
-    glutBitmapString(GLUT_BITMAP_HELVETICA_18, (const unsigned char*)text);
-#else // apple
-	std::string textStr = text;
+	// if linux use glutBitmapString
+	#ifndef __APPLE__
+	    glutBitmapString(GLUT_BITMAP_HELVETICA_18, (const unsigned char*)text);
 
-	for(char c : textStr) {
-		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, int(c));
-	}
-#endif
+	// else if apple use glutBitmapCharacter because glutBitmapString is not supported
+	#else
+		std::string textStr = text;
+
+		// render each character individually
+		for(char c : textStr) {
+			glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, int(c));
+		}
+	#endif
 }

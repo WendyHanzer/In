@@ -26,14 +26,15 @@ void main(void) {
     float ks = pow(max(dot(N,H), 0.0), shininess);
     vec4 specularValue = ks * specular;
 
+    // if no light specular color should be black
     if(dot(L,N) < 0.0) {
         specularValue = vec4(0.0,0.0,0.0,0.0);
     }
 
 	tex_coords = v_texCoord;
 
-	//vec3 ignore = v_color;
-    vec4 ambientValue = ambient * 0.1;
+	// calm down the lighting values
+    vec4 ambientValue = ambient * 0.5;
     diffuseValue *= 0.5;
     specularValue *= 0.5;
 
@@ -45,5 +46,6 @@ void main(void) {
     	color = ambientValue + diffuseValue + specularValue + vec4(v_color, 1.0);
 	}
 
+    // set vertex position
     gl_Position = mvpMatrix * vec4(v_position, 1.0);
 }
