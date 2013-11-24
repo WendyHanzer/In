@@ -61,7 +61,7 @@ SimObject::SimObject(GLuint program, btScalar mass, std::string modelFile, btVec
 	}
 	shape->calculateLocalInertia(mass, fallInertia);
 	btRigidBody::btRigidBodyConstructionInfo shape1CI(mass,fallMotionState,shape,fallInertia);
-	shape1CI.m_friction = 0.0;
+	shape1CI.m_friction = 0.5;
 	//shape1CI.m_restitution = 0.0;
 
 	// create rigid body from collision shape
@@ -104,6 +104,7 @@ void SimObject::update()
 		Engine::score();
 		reset();
 	}
+	// win position is around -9x and-6.5z
 }
 
 void SimObject::render(bool ambient, bool specular, bool diffuse)
@@ -203,7 +204,7 @@ void SimObject::reset()
 	meshBody->setAngularVelocity(btVector3(0,0,0));
 
 	// reset position
-	move(btVector3(0,2,0));
+	move(btVector3(0,0.1,0));
 }
 
 btRigidBody* SimObject::getMesh() const

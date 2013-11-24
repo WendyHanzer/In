@@ -91,10 +91,12 @@ void Engine::init(int argc, char **argv)
 
     // create board and ball
     objects.push_back(new SimObject(program, 0, "board.obj", btVector3(0,0,0)));
-	objects.push_back(new SimObject(program, 1, "ball.obj", btVector3(0,2,0)));
+	objects.push_back(new SimObject(program, 1, "ball.obj", btVector3(0,0.1,0)));
+	objects.push_back(new SimObject(program, 0, "boardTop.obj", btVector3(0,0.1,0)));
 
 	// set up board as kinematic object
 	objects[0]->getMesh()->setCollisionFlags(btCollisionObject::CF_KINEMATIC_OBJECT);
+	objects[2]->getMesh()->setCollisionFlags(btCollisionObject::CF_KINEMATIC_OBJECT);
 
 	// add objects to the simulation enviornment
 	for(SimObject *object : objects) {
@@ -173,8 +175,12 @@ void Engine::render()
 	glUseProgram(program);
 
 	// render all objects
-	for(SimObject* object : objects) {
-		object->render(ambient, specular, diffuse);
+	//for(SimObject* object : objects) {
+	//	object->render(ambient, specular, diffuse);
+	//}
+	// render everything except the cover
+	for(int i=0; i<2; i++) {
+		objects[i]->render(ambient,specular,diffuse);
 	}
 
 	// render all lights
@@ -342,6 +348,11 @@ void Engine::keyboardHandle()
     	boardAngle2 += 0.01;
 
     }
+
+	if(boardAngle > 0.5) boardAngle = 0.5;
+	if(boardAngle < -0.5) boardAngle = -0.5;
+	if(boardAngle2 > 0.5) boardAngle2 = 0.5;
+	if(boardAngle2 < -0.5) boardAngle2 = -0.5;
 	
 	// update board with new rotation value
     btTransform trans;
@@ -350,7 +361,13 @@ void Engine::keyboardHandle()
     rotation += btQuaternion(btVector3(0,0,1), boardAngle) + btQuaternion(btVector3(1,0,0), boardAngle2);
     trans.setRotation(rotation);
     objects[0]->getMesh()->getMotionState()->setWorldTransform(trans);
-	
+
+	objects[2]->getMesh()->getMotionState()->getWorldTransform(trans);
+    rotation = trans.getRotation();
+    rotation += btQuaternion(btVector3(0,0,1), boardAngle) + btQuaternion(btVector3(1,0,0), boardAngle2);
+    trans.setRotation(rotation);
+    objects[2]->getMesh()->getMotionState()->setWorldTransform(trans);
+
 }
 
 
@@ -493,6 +510,12 @@ void Engine::mouseMovement(int x_pos, int y_pos)
         rotation += btQuaternion(btVector3(0,0,1), boardAngle) + btQuaternion(btVector3(1,0,0), boardAngle2);
         trans.setRotation(rotation);
         objects[0]->getMesh()->getMotionState()->setWorldTransform(trans);
+
+        objects[2]->getMesh()->getMotionState()->getWorldTransform(trans);
+        rotation = trans.getRotation();
+        rotation += btQuaternion(btVector3(0,0,1), boardAngle) + btQuaternion(btVector3(1,0,0), boardAngle2);
+        trans.setRotation(rotation);
+        objects[2]->getMesh()->getMotionState()->setWorldTransform(trans);
 	}
 }
 
