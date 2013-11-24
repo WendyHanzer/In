@@ -16,9 +16,7 @@ Current Controls
 * Left Click and drag will move the board
 
 ## TODO ##
-* Reset ball when it falls through hole
 * Score System
-* Implement Timer
 * Implement Spotlight maybe
 * fix arrow keys to update on all views
 * stop ball from falling out of table

@@ -102,7 +102,10 @@ void Engine::init(int argc, char **argv)
 	}
 
 	// create lights
-	lights.push_back(new Light(program, glm::vec3(3,5,0)));
+	lights.push_back(new Light(program, glm::vec3(0,5,0)));
+	lights.push_back(new Light(program, glm::vec3(0,1,0)));
+
+	lights[1]->enableTracking(objects[1]);
 
 	// set initialized flag to true
 	initialized = true;
