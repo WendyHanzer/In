@@ -112,7 +112,7 @@ void Engine::init(int argc, char **argv)
 
 	// initialize top scores
 	for(int i = 1; i <= 10; i++) {
-			topTenScores[i-1] = std::string("Time: 0.00   Fall Count: 0");
+			topTenScores[i-1] = std::string("Time: 0.00   Fail Count: 0");
 	}
 
 	// set initialized flag to true
@@ -183,6 +183,10 @@ void Engine::render()
 {
 	// text buffer for rendering text
 	char textBuffer[256];
+	// variables for rendering scores
+	int i = 1;
+	float height = 0.68;
+	
 	// init GL background color and clear buffer bits
 	glClearColor(0.0,0.5,0.5,1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -219,26 +223,28 @@ void Engine::render()
     text = diffuse ? "Diffuse: On" : "Diffuse: Off";
     renderText(text.c_str(), glm::vec2(-0.95,0.64), glm::vec3(0.0,0.0,0.0));
 
+    // render current game text
+    text = "Current Game";
+    renderText(text.c_str(), glm::vec2(0.6, 0.92), glm::vec3(0.0,0.0,0.0));
+
     // fill buffer with value and render time text
     sprintf(textBuffer, "Time: %.2f", gameTime);
     renderText(textBuffer, glm::vec2(0.6,0.85), glm::vec3(0.0,0.0,0.0));
 
+    // fill buffer with value and render game score
+    sprintf(textBuffer, "Fail Count: %d", gameScore);
+    renderText(textBuffer, glm::vec2(0.8, 0.85), glm::vec3(0.0,0.0,0.0));
+
 	text = "Top Ten Scores";
 	renderText(text.c_str(), glm::vec2(0.6,0.75), glm::vec3(0.0,0.0,0.0));
 
-	int i = 1;
-	float height = 0.68;
+	// render top 10 scores
 	for(std::string scoreStr : topTenScores) {
 		sprintf(textBuffer, "%d.", i++);
 		renderText(textBuffer, glm::vec2(0.6,height), glm::vec3(0.0,0.0,0.0));
 		renderText(scoreStr.c_str(), glm::vec2(0.64,height), glm::vec3(0.0,0.0,0.0));
 		height -= 0.07;
 	}
-
-
-    // fill buffer with value and render game score
-    sprintf(textBuffer, "Ball Count: %d", gameScore);
-    renderText(textBuffer, glm::vec2(-0.95, 0.85), glm::vec3(0.0,0.0,0.0));
 
     // draw to the screen
 	glutSwapBuffers();
@@ -306,7 +312,7 @@ void Engine::score(int x)
 		char buffer[256];
 
 		// load buffer with current values
-		sprintf(buffer, "Time: %.2f   Fall Count: %d", gameTime, gameScore);
+		sprintf(buffer, "Time: %.2f   Fail Count: %d", gameTime, gameScore);
 
 		// add score to top ten
 		topTenScores.push_back(std::string(buffer));
