@@ -101,10 +101,16 @@ void SimObject::update()
 	// get position and test if score needs to be updated
 	auto pos = getPosition();
 	if(pos.y() < -15) {
-		Engine::score();
+		Engine::score(0);
 		reset();
 	}
 	// win position is around -9x and-6.5z
+	pos = getPosition();
+	if(pos.x() < -9 && (pos.z() <= -6.3 && pos.z() >= -6.7)) {
+		Engine::score(1);
+		reset();
+	}
+		
 }
 
 void SimObject::render(bool ambient, bool specular, bool diffuse)

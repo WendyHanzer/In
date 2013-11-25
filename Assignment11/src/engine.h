@@ -49,7 +49,7 @@ public:
 	// glut callback functions
 	static void render();
 	static void update();
-	static void score();
+	static void score(int x);
 	static void reshape(int new_width, int new_height);
 
 	// input functions
@@ -93,6 +93,7 @@ private:
 	static float boardAngle, boardAngle2;
 	static float gameTime;
 	static int gameScore;
+	static float lastScore;
 
 	static std::vector<Light*> lights;
 

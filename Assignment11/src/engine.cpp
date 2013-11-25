@@ -29,6 +29,7 @@ bool Engine::rightClick = false, Engine::leftClick = false, Engine::defaultCam =
 float Engine::mouseX, Engine::mouseY, Engine::posX = 0, Engine::posY = 0, Engine::distance = 20, Engine::posZ = -5;
 float Engine::boardAngle = 0, Engine::boardAngle2 = 0;
 std::vector<Light*> Engine::lights;
+float Engine::lastScore = 0.0f;
 float Engine::gameTime = 0.0f;
 int Engine::gameScore = 0;
 
@@ -207,6 +208,13 @@ void Engine::render()
     sprintf(textBuffer, "Time: %.2f", gameTime);
     renderText(textBuffer, glm::vec2(0.65,0.85), glm::vec3(0.0,0.0,0.0));
 
+	// fill buffer with value and render game time win scores
+	text = "Scores:";
+	renderText(text.c_str(), glm::vec2(0.65,0.75), glm::vec3(0.0,0.0,0.0));
+	sprintf(textBuffer, "Time: %.2f", lastScore);
+    renderText(textBuffer, glm::vec2(0.65,0.70), glm::vec3(0.0,0.0,0.0));
+
+
     // fill buffer with value and render game score
     sprintf(textBuffer, "Ball Count: %d", gameScore);
     renderText(textBuffer, glm::vec2(-0.95, 0.85), glm::vec3(0.0,0.0,0.0));
@@ -249,9 +257,14 @@ void Engine::update()
 	glutPostRedisplay();
 }
 
-void Engine::score()
+void Engine::score(int x)
 {
-	gameScore++;
+	if(x == 0) gameScore++;
+	if(x == 1) {
+		lastScore = gameTime;
+		gameTime = 0.0;
+		gameScore = 0;
+	}
 }
 
 void Engine::reshape(int new_width, int new_height)
@@ -500,7 +513,7 @@ void Engine::mouseMovement(int x_pos, int y_pos)
 		if(boardAngle2 < -0.5) boardAngle2 = -0.5;
 
 		 
-		std::cout << boardAngle << " " << boardAngle2 << std::endl;
+		//std::cout << boardAngle << " " << boardAngle2 << std::endl;
 
 		
 		// update board with new rotation value
