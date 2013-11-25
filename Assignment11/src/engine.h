@@ -20,6 +20,8 @@
 #include <chrono>
 #include <stdexcept>
 #include <vector>
+#include <sstream>
+#include <algorithm>
 
 #include <glm/glm.hpp>
 
@@ -45,6 +47,7 @@ public:
 	static float getDT();
 	static glm::mat4 getView();
 	static glm::mat4 getProjection();
+	static void reset();
 
 	// glut callback functions
 	static void render();
@@ -93,7 +96,7 @@ private:
 	static float boardAngle, boardAngle2;
 	static float gameTime;
 	static int gameScore;
-	static float lastScore;
+	static std::vector<std::string> topTenScores;
 
 	static std::vector<Light*> lights;
 

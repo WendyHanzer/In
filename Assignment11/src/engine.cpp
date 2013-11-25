@@ -29,9 +29,9 @@ bool Engine::rightClick = false, Engine::leftClick = false, Engine::defaultCam =
 float Engine::mouseX, Engine::mouseY, Engine::posX = 0, Engine::posY = 0, Engine::distance = 20, Engine::posZ = -5;
 float Engine::boardAngle = 0, Engine::boardAngle2 = 0;
 std::vector<Light*> Engine::lights;
-float Engine::lastScore = 0.0f;
 float Engine::gameTime = 0.0f;
 int Engine::gameScore = 0;
+std::vector<std::string> Engine::topTenScores(10);
 
 btDiscreteDynamicsWorld* Engine::simulation = nullptr;
 btRigidBody *Engine::body1 = nullptr, *Engine::body2 = nullptr;
@@ -110,6 +110,11 @@ void Engine::init(int argc, char **argv)
 
 	lights[1]->enableTracking(objects[1]);
 
+	// initialize top scores
+	for(int i = 1; i <= 10; i++) {
+			topTenScores[i-1] = std::string("Time: 0.00   Fall Count: 0");
+	}
+
 	// set initialized flag to true
 	initialized = true;
 }
@@ -164,6 +169,16 @@ glm::mat4 Engine::getProjection()
 	return projection;
 }
 
+void Engine::reset()
+{
+	// reset objects to inital positions
+	objects[0]->rotate(0,btVector3(1,1,1));
+	objects[2]->rotate(0,btVector3(1,1,1));
+	objects[1]->reset();
+
+	boardAngle = boardAngle2 = 0;
+}
+
 void Engine::render()
 {
 	// text buffer for rendering text
@@ -206,13 +221,19 @@ void Engine::render()
 
     // fill buffer with value and render time text
     sprintf(textBuffer, "Time: %.2f", gameTime);
-    renderText(textBuffer, glm::vec2(0.65,0.85), glm::vec3(0.0,0.0,0.0));
+    renderText(textBuffer, glm::vec2(0.6,0.85), glm::vec3(0.0,0.0,0.0));
 
-	// fill buffer with value and render game time win scores
-	text = "Scores:";
-	renderText(text.c_str(), glm::vec2(0.65,0.75), glm::vec3(0.0,0.0,0.0));
-	sprintf(textBuffer, "Time: %.2f", lastScore);
-    renderText(textBuffer, glm::vec2(0.65,0.70), glm::vec3(0.0,0.0,0.0));
+	text = "Top Ten Scores";
+	renderText(text.c_str(), glm::vec2(0.6,0.75), glm::vec3(0.0,0.0,0.0));
+
+	int i = 1;
+	float height = 0.68;
+	for(std::string scoreStr : topTenScores) {
+		sprintf(textBuffer, "%d.", i++);
+		renderText(textBuffer, glm::vec2(0.6,height), glm::vec3(0.0,0.0,0.0));
+		renderText(scoreStr.c_str(), glm::vec2(0.64,height), glm::vec3(0.0,0.0,0.0));
+		height -= 0.07;
+	}
 
 
     // fill buffer with value and render game score
@@ -261,9 +282,47 @@ void Engine::score(int x)
 {
 	if(x == 0) gameScore++;
 	if(x == 1) {
-		lastScore = gameTime;
+		// comparator function for sorting scores
+		auto scoreCmp = [](const std::string& str1, const std::string& str2) -> float {
+			std::stringstream ss(str1);
+			std::string timeText;
+			float t1, t2;
+
+			ss >> timeText >> t1;
+			ss.str(str2);
+			ss >> timeText >> t2;
+
+			if(t1 == 0.0 && t2 != 0.0)
+				return t2 < t1;
+
+			if (t1 != 0.0 && t2 == 0.0)
+				return t1 > t2;
+
+			else
+				return t1 < t2;
+		};
+
+		// buffer for score text
+		char buffer[256];
+
+		// load buffer with current values
+		sprintf(buffer, "Time: %.2f   Fall Count: %d", gameTime, gameScore);
+
+		// add score to top ten
+		topTenScores.push_back(std::string(buffer));
+
+		// sort scores
+		std::sort(topTenScores.begin(), topTenScores.end(), scoreCmp);
+
+		// remove 11th score
+		topTenScores.pop_back();
+
+		// reset game values
 		gameTime = 0.0;
 		gameScore = 0;
+
+		// reset board and ball position
+		reset();
 	}
 }
 
@@ -305,6 +364,10 @@ void Engine::keyboard(unsigned char key, int x_pos, int y_pos)
             diffuse = !diffuse;
         break;
 
+        case 't':
+        case 'T':
+        	score(1);
+        break;
         // if space is pressed reset to default camera
 		case SPACE:
 			defaultCam = true;
@@ -362,6 +425,7 @@ void Engine::keyboardHandle()
 
     }
 
+    // limit board rotation
 	if(boardAngle > 0.5) boardAngle = 0.5;
 	if(boardAngle < -0.5) boardAngle = -0.5;
 	if(boardAngle2 > 0.5) boardAngle2 = 0.5;
@@ -507,6 +571,8 @@ void Engine::mouseMovement(int x_pos, int y_pos)
 			mouseY = y_pos;
 
 		}
+
+		// limit board rotation
 		if(boardAngle > 0.5) boardAngle = 0.5;
 		if(boardAngle < -0.5) boardAngle = -0.5;
 		if(boardAngle2 > 0.5) boardAngle2 = 0.5;
@@ -586,8 +652,12 @@ void Engine::menuActions(int option)
 			boardAngle = boardAngle2 = 0.0;
 
 			// reset objects to inital positions
-			objects[0]->rotate(0,btVector3(1,1,1));
-			objects[1]->reset();
+			reset();
+
+			// reset top ten scores
+			for(int i = 1; i <= 10; i++) {
+				topTenScores[i-1] = std::string("Time: 0.00   Fall Count: 0");
+			}
 		break;
 
 		// exit game
