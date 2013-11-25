@@ -662,7 +662,7 @@ void Engine::menuActions(int option)
 
 			// reset top ten scores
 			for(int i = 1; i <= 10; i++) {
-				topTenScores[i-1] = std::string("Time: 0.00   Fall Count: 0");
+				topTenScores[i-1] = std::string("Time: 0.00   Fail Count: 0");
 			}
 		break;
 
